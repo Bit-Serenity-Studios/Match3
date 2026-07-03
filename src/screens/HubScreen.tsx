@@ -16,6 +16,11 @@ import { pull, PULL_COST_EMBERS } from '../companions/gacha';
 import { xpProgress } from '../companions/progression';
 import { EXPEDITION_MINUTES, MAX_SLOTS, type ExpeditionDuration } from '../expeditions/types';
 import type { CompanionDef, Rarity } from '../companions/types';
+import { StoreScreen } from './StoreScreen';
+import { BattlePassScreen } from './BattlePassScreen';
+import { FEATURE_FLAGS } from '../config/flags';
+import { MAX_LIVES, msUntilNextLife } from '../monetization/lives';
+import { rollMystery } from '../monetization/ads';
 
 const RARITY_HEX: Record<Rarity, string> = {
   common: '#a8a8b0',
@@ -32,9 +37,20 @@ export function HubScreen() {
   const embers = useProfile((s) => s.embers);
   const gems = useProfile((s) => s.gems);
   const highest = useProfile((s) => s.highestUnlocked);
+  const lives = useProfile((s) => s.lives);
+  const materializeLives = useProfile((s) => s.materializeLivesNow);
+  const claimSubDripNow = useProfile((s) => s.claimSubDripNow);
 
   const showCompanions = highest >= UNLOCK_COMPANIONS_AT;
   const showExpeditions = highest >= UNLOCK_EXPEDITIONS_AT;
+
+  // Refresh lives + sub drip on mount and on a light timer.
+  useEffect(() => {
+    materializeLives();
+    claimSubDripNow(Date.now());
+    const id = setInterval(() => materializeLives(), 15000);
+    return () => clearInterval(id);
+  }, [materializeLives, claimSubDripNow]);
 
   return (
     <View style={styles.root}>
@@ -50,12 +66,17 @@ export function HubScreen() {
       </View>
 
       <View style={styles.currencies}>
+        <LivesTile lives={lives} />
         <Currency label="Coins" value={coins} color={palette.candlelight} />
         <Currency label="Embers" value={embers} color="#e97e7e" />
         <Currency label="Gems" value={gems} color={palette.purple} />
       </View>
 
-      <View style={styles.tabs}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabsScroll}
+      >
         <TabBtn label="Fixtures" active={tab === 'fixtures'} onPress={() => setTab('fixtures')} />
         <TabBtn
           label="Companions"
@@ -69,13 +90,90 @@ export function HubScreen() {
           onPress={() => setTab('expeditions')}
           locked={!showExpeditions}
         />
-      </View>
-
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 40 }}>
-        {tab === 'fixtures' && <FixturesTab />}
-        {tab === 'companions' && (showCompanions ? <CompanionsTab /> : <LockedNote at={UNLOCK_COMPANIONS_AT} what="Companions" />)}
-        {tab === 'expeditions' && (showExpeditions ? <ExpeditionsTab /> : <LockedNote at={UNLOCK_EXPEDITIONS_AT} what="Expeditions" />)}
+        {FEATURE_FLAGS.iapEnabled && (
+          <TabBtn label="Store" active={tab === 'store'} onPress={() => setTab('store')} />
+        )}
+        {FEATURE_FLAGS.battlePassEnabled && (
+          <TabBtn label="Pass" active={tab === 'pass'} onPress={() => setTab('pass')} />
+        )}
       </ScrollView>
+
+      <View style={styles.body}>
+        {tab === 'fixtures' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+            <FixturesTab />
+            <MysteryBoxCard />
+          </ScrollView>
+        )}
+        {tab === 'companions' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+            {showCompanions ? <CompanionsTab /> : <LockedNote at={UNLOCK_COMPANIONS_AT} what="Companions" />}
+          </ScrollView>
+        )}
+        {tab === 'expeditions' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+            {showExpeditions ? <ExpeditionsTab /> : <LockedNote at={UNLOCK_EXPEDITIONS_AT} what="Expeditions" />}
+          </ScrollView>
+        )}
+        {tab === 'store' && <StoreScreen />}
+        {tab === 'pass' && <BattlePassScreen />}
+      </View>
+    </View>
+  );
+}
+
+function LivesTile({ lives }: { lives: { lives: number; regenAt: number | null } }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const ms = msUntilNextLife(lives, now);
+  const sub = ms > 0 ? formatMs(ms) : lives.lives >= MAX_LIVES ? 'full' : '';
+  return (
+    <View style={styles.currency}>
+      <Text style={[typography.small, { color: '#e97e7e' }]}>Lives</Text>
+      <Text style={[typography.score, { color: '#e97e7e' }]}>
+        {lives.lives}/{MAX_LIVES}
+      </Text>
+      {sub && <Text style={typography.small}>{sub}</Text>}
+    </View>
+  );
+}
+
+function MysteryBoxCard() {
+  const canShowRewarded = useProfile((s) => s.canShowRewardedAd);
+  const showAd = useProfile((s) => s.showRewardedAd);
+  const applyMystery = useProfile((s) => s.applyMysteryReward);
+  const [flash, setFlash] = useState<string | null>(null);
+  const now = Date.now();
+  if (!FEATURE_FLAGS.adsEnabled) return null;
+  if (!canShowRewarded('mysteryBox', now)) {
+    return (
+      <View style={styles.card}>
+        <Text style={typography.h2}>Mystery Box</Text>
+        <Text style={typography.small}>Return tomorrow for another spin.</Text>
+      </View>
+    );
+  }
+  const onSpin = async () => {
+    const r = await showAd('mysteryBox');
+    if (r.ok && r.rewarded) {
+      const seed = Date.now() % 1000000;
+      const reward = rollMystery(seed);
+      applyMystery(reward.coins, reward.gems, reward.embers);
+      setFlash(`${reward.label} — +${reward.coins} 🪙 +${reward.gems} 💎 +${reward.embers} 🔥`);
+      setTimeout(() => setFlash(null), 3000);
+    }
+  };
+  return (
+    <View style={styles.card}>
+      <Text style={typography.h2}>Mystery Box</Text>
+      <Text style={typography.small}>One daily spin. Watch a short ad.</Text>
+      <Pressable onPress={onSpin} style={styles.smallBtn}>
+        <Text style={styles.smallBtnLabel}>Spin</Text>
+      </Pressable>
+      {flash && <Text style={[typography.body, { marginTop: spacing.sm }]}>{flash}</Text>}
     </View>
   );
 }
@@ -447,8 +545,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
+  tabsScroll: {
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
   tabBtn: {
-    flex: 1,
+    minWidth: 96,
     padding: spacing.sm,
     borderRadius: radii.md,
     backgroundColor: palette.bgSurface,

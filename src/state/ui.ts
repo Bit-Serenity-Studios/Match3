@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 
 export type Screen = 'game' | 'hub';
-export type HubTab = 'fixtures' | 'companions' | 'expeditions';
+export type HubTab =
+  | 'fixtures'
+  | 'companions'
+  | 'expeditions'
+  | 'store'
+  | 'pass';
 
 interface UIState {
   screen: Screen;

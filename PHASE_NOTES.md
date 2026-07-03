@@ -1,5 +1,168 @@
 # Phase Notes
 
+## Phase 4 — Economy + Monetization (behind feature flags, stub providers)
+
+### The `MonetizationProvider` seam
+
+All IAP and ad calls route through a single interface at `src/monetization/types.ts`:
+
+```ts
+interface MonetizationProvider {
+  purchase(sku: Sku): Promise<PurchaseResult>;
+  showRewardedAd(placement: AdPlacement): Promise<AdResult>;
+  showInterstitial(placement: AdPlacement): Promise<AdResult>;
+  isPurchaseAvailable(): Promise<boolean>;
+  isAdAvailable(placement: AdPlacement): Promise<boolean>;
+}
+```
+
+- `MockProvider` in `mockProvider.ts` returns instant success (configurable purchase-fail-rate + ad-dismiss-rate). It's the only implementation today.
+- `getProvider()` / `setProvider(...)` swap the process-wide default. Wire the RevenueCat / AdMob adapters here — no other code needs to change.
+
+### Feature flags (`src/config/flags.ts`)
+
+Hard-coded for Phase 4; hook a remote-config plugin in Phase 5 to flip in prod without a release:
+
+- `iapEnabled` — gem packs, starter, piggy bank, subscription
+- `adsEnabled` — rewarded ads + interstitials
+- `battlePassEnabled` — Mini-Pass tab
+- `piggyBankEnabled`, `segmentedOffersEnabled`, `subscriptionEnabled`
+- `suppressInterstitialsOverride` — internal killswitch for interstitials
+
+Every UI surface reads flags at render time; flipping one off hides its slot completely.
+
+### Currencies (`src/state/profile.ts`)
+
+- `coins`, `gems`, `embers`, `lives` (persisted)
+- Lives: `LivesState = { lives, regenAt }`; max 5, 30 min per life. `materializeLives(state, now)` is pure and idempotent — every read projects forward against `Date.now()`.
+- Consumed on `registerLoss`. Rescued via ad (`rescueLife` placement, 3/day cap) or IAP starter bundle.
+
+### Streak (`src/monetization/streak.ts`)
+
+Consecutive wins escalate through 3/5/7 tiers:
+| Tier | Wins | Booster |
+|---|---|---|
+| Kindled | 3 | +2 moves |
+| Simmering | 5 | +3 moves + free lineH special |
+| Roaring | 7 | +4 moves + free bomb special |
+
+`applyStreakBoosters(state, streak, seed)` is a pure transform on GameState — extra moves are added to `movesRemaining`, free specials are spawned at a seeded random plain cell. `GameScreen` applies this at newGame time.
+
+The **continue screen** (see below) prominently shows the streak that will be lost if the player gives up.
+
+### Fail-state continue flow
+
+`ContinueScreen` opens when a level status flips to `lost`. It shows:
+- Remaining objectives (e.g. "Only 2 vials left!")
+- Streak card with current tier and `winsToNext`
+- "+5 moves · 20 💎" primary CTA — pays gems, resumes level, **preserves streak**
+- Rewarded-ad rescue if `extraMoves` daily cap unused (strictly 1/day per brief)
+- "Give up" — resets streak, calls `registerLoss`, triggers segmented offer if applicable
+
+### Store
+
+`src/monetization/catalog.ts` defines:
+
+**Gem packs (decoy anchoring):**
+| SKU | USD | Gems | Per-gem cost | Tag |
+|---|---|---|---|---|
+| gems-small | $0.99 | 80 | 1.24¢ | — |
+| gems-mid | $4.99 | 550 | 0.91¢ | **value** |
+| gems-large | $19.99 | 2400 | 0.83¢ | — |
+| gems-decoy | $99.99 | 9500 | 1.05¢ | **decoy** |
+
+The mid-tier `value` pack sits between the cheapest (worst per-gem) and the decoy (deliberately worse per-gem than the tier above it). The decoy exists to anchor the mid-tier as the obvious buy.
+
+**Starter bundle** — one-time, $1.99 → 300 gems + 1500 coins + 50 embers + 5 lives. Hidden after `starterBundleClaimed`.
+
+**Piggy Bank** — every win drips 3 gems into a locked balance capped at 500. `isRipe()` fires at 80%. Player unlocks with a $2.99 IAP; balance transfers to gems and piggy resets.
+
+**Segmented offers** — 3 fails on the same level trigger `offerFor(level, now)`, a 15-min limited SKU with contents biased toward the level's blockers (ivy/vine → extra embers, stoneRune → extra coins, frostGlass → extra gems). Only one active offer at a time.
+
+**Apprentice's Oath** — monthly subscription stub, $4.99/mo. Suppresses interstitials, drips 30 gems/day via `claimDrip`, day-1 grant.
+
+### Rewarded ads and interstitials
+
+`src/monetization/ads.ts` tracks per-day per-placement counters:
+
+| Placement | Daily cap |
+|---|---|
+| `rescueLife` | 3 |
+| `coinDouble` | 5 |
+| `mysteryBox` | 1 |
+| `extraMoves` | 1 (brief-mandated) |
+| `interstitialReturnToHub` | 6 |
+
+Interstitials:
+- **Only** on hub-return transitions (GameScreen `onNext`)
+- Frequency-capped (6/day)
+- Fully suppressed for players with `hasEverPurchased == true` OR an active subscription
+
+The **Mystery Box** on the fixtures tab uses `rollMystery(seed)` — weighted table: 55% small (~100 coins + 5 embers), 30% medium, 12% jackpot-lite (5 gems), 3% "Rare Draught" (25 gems + 60 embers). Payout values are ~20-30% of the equivalent IAP.
+
+### Battle Pass (Mini-Pass)
+
+`src/monetization/battlepass.ts` — 14-day, 14-tier pass. Free + premium tracks. Premium unlock is a one-tap flag today; wire to a Sku in Phase 5.
+
+XP sources (wired via `addBattlePassXp`):
+- +cascades count per swap (Cascade challenge)
+- +60 on any level win (daily-win credit)
+
+Rewards scale linearly per tier; premium gets gems (every 3rd tier: 25 gems, else 10). Season expires after 14 days; `isExpired` gates further XP.
+
+Daily/weekly challenge generators (`makeDailyChallenges(dayKey)`, `makeWeeklyChallenges(weekKey)`) produce structured challenge sets. Full tracking-and-claim UI is a Phase 5 polish pass — right now XP flows from gameplay directly.
+
+### Wiring summary (what happens on which event)
+
+| Event | Consequence |
+|---|---|
+| Level win | +coins/+embers/+xp; streak++; piggy drip; battle-pass XP |
+| Level loss | consumeLife; streak=0; consecutiveFails++; if fails==3 → segmentedOffer |
+| Level swap | battle-pass XP from cascades; companion charge from affinity matches |
+| Hub return | interstitial (capped, purchaser-suppressed) |
+| Hub mount | materialize lives; claim sub drip if any |
+| Purchase | apply rewards; `hasEverPurchased=true` — kills future interstitials |
+| Rewarded ad watched | bump per-placement counter for the day |
+
+### Tunable knobs added
+
+| Knob | Location |
+|---|---|
+| Feature flags | `src/config/flags.ts` |
+| Continue cost (gems) | `src/screens/ContinueScreen.tsx` (`CONTINUE_COST_GEMS`) |
+| Streak thresholds + boosters | `src/monetization/streak.ts` (`STREAK_TIERS`) |
+| Gem pack contents + prices | `src/monetization/catalog.ts` |
+| Piggy bank cap + accrual rate | `src/monetization/piggyBank.ts` |
+| Ad daily caps | `src/monetization/types.ts` (`AD_DAILY_CAPS`) |
+| Mystery box payout table | `src/monetization/ads.ts` |
+| Segmented offer trigger + duration | `src/monetization/segmentedOffers.ts` |
+| Battle-pass duration + tier XP curve | `src/monetization/battlepass.ts` |
+| Subscription duration + daily drip | `src/monetization/subscription.ts` + `catalog.ts` |
+
+### Tests added (57 new, 150 total)
+
+- `MockProvider`: purchase success/failure, ad watch/dismiss, log hook
+- `lives`: regen tick, cap, consume from max, grant-to-max clears regen, ms countdown
+- `streak`: tier thresholds, winsToNext, applyBoosters deterministic seed, special spawn at tier 2+
+- `catalog`: gem-pack decoy-per-gem ratio, starter/sub properties, getSku
+- `piggyBank`: accrue, spillage at cap, claim, isRipe
+- `ads`: per-day caps, day-flip reset, prune, mystery table distribution
+- `segmentedOffers`: threshold trigger, active-offer suppression, expiry, blocker-biased contents
+- `battlepass`: tier progression, expiry, reward composition, pendingClaimSummary premium gating
+- `subscription`: activate, drip accumulation, claim-stamp, re-activate extends
+
+### Known limitations / follow-ups
+
+- Segmented-offer SKU isn't in the static `getSku(...)` lookup, so `profile.purchase(offer.sku.id)` synthesizes the reward inline in `GameScreen`. Migrate to a dynamic per-level SKU registry in Phase 5.
+- Battle-pass challenge UI is minimal (XP flows in from gameplay but there's no explicit challenge card list yet).
+- Real ad + IAP SDKs are drop-in replacements at `getProvider()` — but wiring StoreKit / Play Billing sandboxing takes a dev-build swap (Expo Go can't run those).
+- Interstitial timing is "on hub return" per the brief. If we ship a longer session that lingers on the hub, we might want a second `interstitialSessionStart` placement — flag added, not wired.
+- Sim regression at 10 attempts shows level-054 with 0 wins (known from M2 at 12.5 APS with 25 attempts — sample size, not a real regression).
+
+---
+
+
+
 ## Phase 3 — Companions + Apothecary Hub
 
 ### Data flow
