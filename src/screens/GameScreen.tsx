@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,54 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { applySwap, newGame } from '../engine/engine';
-import type { CellPos, GameState } from '../engine/types';
+import { withDifficulty } from '../engine/difficulty';
+import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
-import { tutorial01 } from '../levels/tutorial01';
+import { LEVELS, getLevelByIndex } from '../levels/catalog';
+import { useProfile, difficultyEaseFor } from '../state/profile';
+
+function initialState(
+  level: LevelDef,
+  consecutiveFails: number,
+): GameState {
+  const g = newGame(level);
+  const ease = difficultyEaseFor(consecutiveFails);
+  return ease > 0 ? withDifficulty(g, ease) : g;
+}
 
 export function GameScreen() {
   const dims = useWindowDimensions();
-  const [state, setState] = useState<GameState>(() => newGame(tutorial01));
+  const currentLevelIndex = useProfile((s) => s.currentLevelIndex);
+  const consecutiveFails = useProfile((s) => s.consecutiveFails);
+  const registerWin = useProfile((s) => s.registerWin);
+  const registerLoss = useProfile((s) => s.registerLoss);
+  const advanceLevel = useProfile((s) => s.advanceLevel);
+
+  const level = useMemo(
+    () =>
+      getLevelByIndex(currentLevelIndex) ??
+      getLevelByIndex(LEVELS.length - 1)!,
+    [currentLevelIndex],
+  );
+  const [state, setState] = useState<GameState>(() =>
+    initialState(level, consecutiveFails[level.id] ?? 0),
+  );
   const [flash, setFlash] = useState(0);
   const [highlight, setHighlight] = useState<CellPos[] | undefined>(undefined);
+  const [ended, setEnded] = useState(false);
+
+  useEffect(() => {
+    // When the current level changes, spin up a fresh game state for it.
+    setState(initialState(level, consecutiveFails[level.id] ?? 0));
+    setEnded(false);
+  }, [level, consecutiveFails]);
 
   const boardSize = Math.min(dims.width - spacing.lg * 2, 420);
 
   const onSwap = useCallback(
     (a: CellPos, b: CellPos) => {
+      if (state.status !== 'active') return;
       const r = applySwap(state, a, b);
       if (!r.accepted) {
         setHighlight([a, b]);
@@ -32,37 +65,53 @@ export function GameScreen() {
       const cascades = r.events.filter((e) => e.t === 'cascade').length;
       setFlash((f) => f + Math.min(cascades, 4));
       setState(r.next);
+      if (r.next.status !== 'active' && !ended) {
+        setEnded(true);
+        if (r.next.status === 'won') {
+          registerWin(level.id);
+        } else {
+          registerLoss(level.id);
+        }
+      }
     },
-    [state],
+    [state, ended, level.id, registerWin, registerLoss],
   );
 
-  const restart = useCallback(() => {
-    setState(newGame(tutorial01));
-    setFlash(0);
-  }, []);
+  const onNext = useCallback(() => {
+    advanceLevel();
+  }, [advanceLevel]);
 
-  const progress = state.progress[0];
-  const objective = state.objectives[0];
-  const objectiveLabel = useMemo(() => {
-    if (!objective) return '';
-    switch (objective.kind) {
+  const onRetry = useCallback(() => {
+    setState(initialState(level, consecutiveFails[level.id] ?? 0));
+    setEnded(false);
+    setFlash(0);
+  }, [level, consecutiveFails]);
+
+  const objectiveLabel = (i: number) => {
+    const o = state.objectives[i];
+    if (!o) return '';
+    switch (o.kind) {
       case 'collectColor':
-        return `Collect ${objective.count} ${objective.color}`;
+        return `${o.color} × ${o.count}`;
       case 'clearBlockers':
-        return `Clear all ${objective.blocker ?? ''} blockers`.trim();
+        return `clear ${o.blocker ?? 'blockers'}`;
       case 'dropIngredients':
-        return `Drop ${objective.count} ${objective.tile}`;
+        return `drop ${o.tile} × ${o.count}`;
       case 'score':
-        return `Reach ${objective.target} pts`;
+        return `${o.target} pts`;
     }
-  }, [objective]);
+  };
+
+  const isLastLevel = currentLevelIndex >= LEVELS.length - 1;
 
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>Moonpetal Apothecary</Text>
-        <Text style={typography.small}>Level {state.levelId}</Text>
+        <Text style={typography.small}>
+          {level.id} · {level.archetype}
+        </Text>
       </View>
 
       <View style={styles.hud}>
@@ -75,9 +124,14 @@ export function GameScreen() {
           <Text style={typography.score}>{state.score}</Text>
         </View>
         <View style={styles.hudTile}>
-          <Text style={typography.small}>{objectiveLabel}</Text>
-          <Text style={typography.score}>
-            {progress?.progress ?? 0}/{progress?.target ?? 0}
+          <Text style={typography.small}>Objectives</Text>
+          <Text style={typography.body}>
+            {state.progress
+              .map(
+                (p, i) =>
+                  `${objectiveLabel(i)}: ${p.progress}/${p.target}${p.done ? ' ✓' : ''}`,
+              )
+              .join('  ·  ')}
           </Text>
         </View>
       </View>
@@ -97,16 +151,22 @@ export function GameScreen() {
           <Text style={typography.h1}>
             {state.status === 'won' ? '✨ Brewed!' : 'Out of moves'}
           </Text>
-          <Text style={[typography.body, { marginTop: spacing.sm }]}>
+          <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
             {state.status === 'won'
               ? 'The moon smiled on your work tonight.'
               : 'The kettle sighed. Try again?'}
           </Text>
-          <Pressable style={styles.btn} onPress={restart}>
-            <Text style={styles.btnLabel}>
-              {state.status === 'won' ? 'Play again' : 'Retry'}
-            </Text>
-          </Pressable>
+          {state.status === 'won' && !isLastLevel ? (
+            <Pressable style={styles.btn} onPress={onNext}>
+              <Text style={styles.btnLabel}>Next level</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={styles.btn} onPress={onRetry}>
+              <Text style={styles.btnLabel}>
+                {state.status === 'won' ? 'Play again' : 'Retry'}
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>

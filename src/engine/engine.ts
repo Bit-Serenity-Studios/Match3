@@ -8,13 +8,12 @@ import type {
 } from './types';
 import {
   areAdjacent,
-  cloneBoard,
   createBoard,
   fillEmptyCells,
   getTile,
   swapTiles,
 } from './board';
-import { findMatches, hasAnyMatch } from './match';
+import { hasAnyMatch } from './match';
 import { hasValidMove, reshuffle } from './shuffle';
 import { resolveCascade } from './resolve';
 import { comboClears, specialOn } from './specials';
@@ -30,9 +29,13 @@ export function newGame(level: LevelDef): GameState {
     level.startingLayout,
   );
   board = fillEmptyCells(board, level.dropWeights);
-  // Ensure starting board has no active matches and has a valid move.
-  while (hasAnyMatch(board)) {
+  // fillEmptyCells is match-free by construction. Residual matches only occur
+  // if a level's startingLayout hand-places them — none of the shipped 60 do.
+  // A capped reshuffle protects us if that ever changes.
+  let attempts = 0;
+  while (hasAnyMatch(board) && attempts < 8) {
     board = reshuffle(board);
+    attempts++;
   }
   if (!hasValidMove(board)) {
     board = reshuffle(board);

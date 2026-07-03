@@ -66,8 +66,9 @@ export function swapTiles(
 
 /**
  * Fill any null (but playable) cells with fresh tiles drawn from the RNG
- * stream. Used to construct a starting board when a level provides a
- * partial layout. Advances rngState.
+ * stream. Colors that would form an immediate 3-in-a-row with already-placed
+ * tiles (up or left) are excluded — the starting board is guaranteed
+ * match-free by construction. Advances rngState.
  */
 export function fillEmptyCells(
   b: BoardSnapshot,
@@ -75,12 +76,27 @@ export function fillEmptyCells(
 ): BoardSnapshot {
   let state = b.rngState;
   const tiles = b.tiles.slice();
-  const ws = TILE_COLORS.map((c) => weights[c] ?? 0);
   for (let r = 0; r < b.height; r++) {
     for (let c = 0; c < b.width; c++) {
       const i = idx(b.width, r, c);
       if (!b.mask[i]) continue;
       if (tiles[i]) continue;
+      const excluded = new Set<TileColor>();
+      // Horizontal: two same-color tiles immediately to the left.
+      if (c >= 2) {
+        const t1 = tiles[idx(b.width, r, c - 1)];
+        const t2 = tiles[idx(b.width, r, c - 2)];
+        if (t1?.color && t1.color === t2?.color) excluded.add(t1.color);
+      }
+      // Vertical: two same-color tiles immediately above.
+      if (r >= 2) {
+        const t1 = tiles[idx(b.width, r - 1, c)];
+        const t2 = tiles[idx(b.width, r - 2, c)];
+        if (t1?.color && t1.color === t2?.color) excluded.add(t1.color);
+      }
+      const ws = TILE_COLORS.map((col) =>
+        excluded.has(col) ? 0 : (weights[col] ?? 0),
+      );
       const pick = pickWeighted(state, TILE_COLORS, ws);
       state = pick.state;
       tiles[i] = { color: pick.value };

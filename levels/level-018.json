@@ -1,0 +1,171 @@
+{
+  "id": "level-018",
+  "width": 8,
+  "height": 9,
+  "layout": [
+    {
+      "color": "mushroom",
+      "blocker": {
+        "kind": "ivy",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "runestone",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "dropWeights": {
+    "moonpetal": 1,
+    "vial": 1,
+    "runestone": 1.1,
+    "resin": 1,
+    "mushroom": 1
+  },
+  "objectives": [
+    {
+      "kind": "collectColor",
+      "color": "runestone",
+      "count": 49
+    },
+    {
+      "kind": "collectColor",
+      "color": "mushroom",
+      "count": 30
+    },
+    {
+      "kind": "clearBlockers",
+      "blocker": "vine"
+    }
+  ],
+  "moves": 11,
+  "archetype": "hard",
+  "seed": 20262929
+}
