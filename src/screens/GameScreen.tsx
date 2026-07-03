@@ -13,7 +13,37 @@ import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
 import { LEVELS, getLevelByIndex } from '../levels/catalog';
-import { useProfile, difficultyEaseFor } from '../state/profile';
+import {
+  UNLOCK_HUB_AT,
+  difficultyEaseFor,
+  useProfile,
+} from '../state/profile';
+import { useUI } from '../state/ui';
+import { rewardsFor } from '../economy/rewards';
+import { getCompanion } from '../companions/catalog';
+import {
+  applyDropMultipliers,
+  castAbility,
+  chargeFromEvents,
+  passiveDropMultipliers,
+} from '../companions/effects';
+
+function buildLevelForPlayer(
+  level: LevelDef,
+  equippedId: string | null,
+  ownedById: (id: string) => ReturnType<typeof getCompanion> extends null ? never : any,
+  ownedCompanions: ReturnType<typeof useProfile.getState>['ownedCompanions'],
+): LevelDef {
+  if (!equippedId) return level;
+  const def = getCompanion(equippedId);
+  const owned = ownedCompanions.find((c) => c.id === equippedId) ?? null;
+  if (!def || !owned) return level;
+  const mult = passiveDropMultipliers(owned, def);
+  return {
+    ...level,
+    dropWeights: applyDropMultipliers(level.dropWeights, mult),
+  };
+}
 
 function initialState(
   level: LevelDef,
@@ -31,6 +61,10 @@ export function GameScreen() {
   const registerWin = useProfile((s) => s.registerWin);
   const registerLoss = useProfile((s) => s.registerLoss);
   const advanceLevel = useProfile((s) => s.advanceLevel);
+  const highestUnlocked = useProfile((s) => s.highestUnlocked);
+  const equippedId = useProfile((s) => s.equippedCompanionId);
+  const owned = useProfile((s) => s.ownedCompanions);
+  const goToHub = useUI((s) => s.goToHub);
 
   const level = useMemo(
     () =>
@@ -38,20 +72,31 @@ export function GameScreen() {
       getLevelByIndex(LEVELS.length - 1)!,
     [currentLevelIndex],
   );
+
+  const tunedLevel = useMemo(
+    () => buildLevelForPlayer(level, equippedId, getCompanion, owned),
+    [level, equippedId, owned],
+  );
+
   const [state, setState] = useState<GameState>(() =>
-    initialState(level, consecutiveFails[level.id] ?? 0),
+    initialState(tunedLevel, consecutiveFails[tunedLevel.id] ?? 0),
   );
   const [flash, setFlash] = useState(0);
   const [highlight, setHighlight] = useState<CellPos[] | undefined>(undefined);
   const [ended, setEnded] = useState(false);
+  const [charge, setCharge] = useState(0);
+  const [castSeed, setCastSeed] = useState(0);
 
   useEffect(() => {
-    // When the current level changes, spin up a fresh game state for it.
-    setState(initialState(level, consecutiveFails[level.id] ?? 0));
+    setState(initialState(tunedLevel, consecutiveFails[tunedLevel.id] ?? 0));
     setEnded(false);
-  }, [level, consecutiveFails]);
+    setCharge(0);
+  }, [tunedLevel, consecutiveFails]);
 
   const boardSize = Math.min(dims.width - spacing.lg * 2, 420);
+  const companion = equippedId ? getCompanion(equippedId) : null;
+  const ability = companion?.active;
+  const abilityReady = ability ? charge >= ability.cost : false;
 
   const onSwap = useCallback(
     (a: CellPos, b: CellPos) => {
@@ -64,54 +109,75 @@ export function GameScreen() {
       }
       const cascades = r.events.filter((e) => e.t === 'cascade').length;
       setFlash((f) => f + Math.min(cascades, 4));
+      if (companion) {
+        setCharge((c) => c + chargeFromEvents(r.events, companion.affinityColor));
+      }
       setState(r.next);
       if (r.next.status !== 'active' && !ended) {
         setEnded(true);
         if (r.next.status === 'won') {
-          registerWin(level.id);
+          registerWin(r.next.levelId, rewardsFor(r.next));
         } else {
-          registerLoss(level.id);
+          registerLoss(r.next.levelId);
         }
       }
     },
-    [state, ended, level.id, registerWin, registerLoss],
+    [state, ended, companion, registerWin, registerLoss],
   );
+
+  const onCastAbility = useCallback(() => {
+    if (!ability || !abilityReady || state.status !== 'active') return;
+    setCastSeed((s) => s + 1);
+    const board = castAbility(state, ability, state.board.rngState ^ castSeed);
+    setState({ ...state, board });
+    setCharge(0);
+  }, [ability, abilityReady, state, castSeed]);
 
   const onNext = useCallback(() => {
     advanceLevel();
-  }, [advanceLevel]);
+    if (highestUnlocked >= UNLOCK_HUB_AT) goToHub();
+  }, [advanceLevel, highestUnlocked, goToHub]);
 
   const onRetry = useCallback(() => {
-    setState(initialState(level, consecutiveFails[level.id] ?? 0));
+    setState(initialState(tunedLevel, consecutiveFails[tunedLevel.id] ?? 0));
     setEnded(false);
     setFlash(0);
-  }, [level, consecutiveFails]);
+    setCharge(0);
+  }, [tunedLevel, consecutiveFails]);
 
   const objectiveLabel = (i: number) => {
     const o = state.objectives[i];
     if (!o) return '';
     switch (o.kind) {
       case 'collectColor':
-        return `${o.color} × ${o.count}`;
+        return `${o.color}`;
       case 'clearBlockers':
         return `clear ${o.blocker ?? 'blockers'}`;
       case 'dropIngredients':
-        return `drop ${o.tile} × ${o.count}`;
+        return `drop ${o.tile}`;
       case 'score':
-        return `${o.target} pts`;
+        return `pts`;
     }
   };
 
   const isLastLevel = currentLevelIndex >= LEVELS.length - 1;
+  const hubUnlocked = highestUnlocked >= UNLOCK_HUB_AT;
 
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <Text style={typography.h1}>Moonpetal Apothecary</Text>
-        <Text style={typography.small}>
-          {level.id} · {level.archetype}
-        </Text>
+        <View>
+          <Text style={typography.h1}>Moonpetal Apothecary</Text>
+          <Text style={typography.small}>
+            {level.id} · {level.archetype}
+          </Text>
+        </View>
+        {hubUnlocked && (
+          <Pressable style={styles.hubBtn} onPress={() => goToHub()}>
+            <Text style={styles.hubBtnLabel}>Hub</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.hud}>
@@ -123,15 +189,15 @@ export function GameScreen() {
           <Text style={typography.small}>Score</Text>
           <Text style={typography.score}>{state.score}</Text>
         </View>
-        <View style={styles.hudTile}>
+        <View style={[styles.hudTile, { flex: 2 }]}>
           <Text style={typography.small}>Objectives</Text>
-          <Text style={typography.body}>
+          <Text style={typography.body} numberOfLines={2}>
             {state.progress
               .map(
                 (p, i) =>
-                  `${objectiveLabel(i)}: ${p.progress}/${p.target}${p.done ? ' ✓' : ''}`,
+                  `${objectiveLabel(i)} ${p.progress}/${p.target}${p.done ? ' ✓' : ''}`,
               )
-              .join('  ·  ')}
+              .join(' · ')}
           </Text>
         </View>
       </View>
@@ -146,6 +212,27 @@ export function GameScreen() {
         />
       </View>
 
+      {companion && ability && (
+        <Pressable
+          onPress={onCastAbility}
+          disabled={!abilityReady}
+          style={[styles.abilityBar, !abilityReady && { opacity: 0.55 }]}
+        >
+          <Text style={typography.small}>
+            {companion.name} · {abilityReady ? 'Ready' : `${charge}/${ability.cost}`}
+          </Text>
+          <View style={styles.abilityFill}>
+            <View
+              style={{
+                height: '100%',
+                width: `${Math.min(100, (charge / ability.cost) * 100)}%`,
+                backgroundColor: abilityReady ? palette.emerald : palette.candlelight,
+              }}
+            />
+          </View>
+        </Pressable>
+      )}
+
       {state.status !== 'active' && (
         <View style={styles.overlay}>
           <Text style={typography.h1}>
@@ -158,7 +245,9 @@ export function GameScreen() {
           </Text>
           {state.status === 'won' && !isLastLevel ? (
             <Pressable style={styles.btn} onPress={onNext}>
-              <Text style={styles.btnLabel}>Next level</Text>
+              <Text style={styles.btnLabel}>
+                {hubUnlocked ? 'Back to Apothecary' : 'Next level'}
+              </Text>
             </Pressable>
           ) : (
             <Pressable style={styles.btn} onPress={onRetry}>
@@ -180,7 +269,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxl + spacing.lg,
   },
-  header: { alignItems: 'center', marginBottom: spacing.lg },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  hubBtn: {
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.border,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  hubBtnLabel: {
+    color: palette.parchment,
+    fontWeight: '600',
+  },
   hud: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -197,6 +303,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   boardWrap: { alignItems: 'center', marginTop: spacing.md },
+  abilityBar: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.border,
+    borderWidth: 1,
+    borderRadius: radii.md,
+  },
+  abilityFill: {
+    height: 6,
+    marginTop: spacing.xs,
+    backgroundColor: palette.bgSurface2,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
   overlay: {
     position: 'absolute',
     top: 0,

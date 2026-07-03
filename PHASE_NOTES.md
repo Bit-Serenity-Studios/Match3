@@ -1,5 +1,128 @@
 # Phase Notes
 
+## Phase 3 — Companions + Apothecary Hub
+
+### Data flow
+
+```
+src/companions/         # collectibles + gacha + progression + effects
+  types.ts / catalog.ts (10 companions across C/R/E/L)
+  gacha.ts   → seeded pulls, pity, dup→shards
+  progression.ts → XP curves, evolution
+  effects.ts  → passive drop multipliers, active cast
+
+src/expeditions/        # appointment mechanic
+  types.ts / rewards.ts (deterministic seeded rewards, 30m/2h/8h)
+
+src/hub/                # builder screen fixtures
+  fixtures.ts (3 fixed slots, tap-to-build, permanent meta bonuses)
+
+src/economy/            # per-level-win reward computation
+  rewards.ts
+
+src/state/
+  profile.ts  → extended with currencies, companions, expeditions, hub
+  ui.ts       → screen router (game ↔ hub) — ephemeral, not persisted
+                so a fresh launch always drops on the game (brief: no title)
+
+src/screens/
+  GameScreen.tsx  → applies passive drop multipliers, tracks ability charge,
+                    casts active ability, rewards on win, routes to hub
+  HubScreen.tsx   → 3 tabs (fixtures / companions / expeditions)
+```
+
+### Companion roster (10)
+
+- 4 common (Lumen Moth, Marsh Toad, Slate Newt, Reed Sparrow) — +6/10/15% affinity drop weight per tier
+- 3 rare (Emberling Fox, Crescent Owl, Ivy Cat) — +10/15/22% affinity
+- 2 epic (Astral Toad, Widowmoth) — +15/22/30% affinity
+- 1 legendary (Moonchild Fox Spirit) — +5/8/12% GLOBAL drop weight
+
+Distribution matches gacha odds so pulls feel varied but bounded.
+
+### Gacha (Summoning Cauldron)
+
+- Cost: **100 embers** per pull (`PULL_COST_EMBERS` in `gacha.ts`)
+- Base rates: common 70% / rare 22% / epic 6.5% / legendary 1.5%
+- **Pity**: 30 pulls without epic+ forces epic+; 90 pulls without legendary forces legendary
+- Duplicates: award shards on the companion's record (common 1 / rare 3 / epic 10 / legendary 50)
+- Deterministic given seed + owned set
+
+### Companion progression
+
+- **XP curve** per companion (5 thresholds). Common companions cap at level 6, epic/legendary progress slower per level but with more powerful passives
+- **Evolution**: two thresholds gated by both level AND shards. Tier 1→2, 2→3. Passives step up at each tier
+- Currently no visual tier change (tier is exposed on the collection card only) — real art drop lands here later
+
+### Expeditions
+
+- 3 durations: 30m / 2h / 8h. **Real time**, uses `Date.now()`. No backend — timer survives cold start (endsAt is absolute epoch).
+- Max 2 concurrent slots (`MAX_SLOTS`). A companion can only be on one expedition at a time.
+- Rewards deterministic given (companionId, duration, seed):
+  - coins scale by rarity mult (common 1.0 → legendary 2.0) and jitter ±20%
+  - embers/shards scale by rarity mult (no jitter)
+  - Long expeditions have a 10% chance to return a premium gem — the only expedition path to gems
+
+### Apothecary Hub — fixtures
+
+Three fixed slots, tap-to-build, no inventory management (per brief):
+| Fixture | Effect at max tier | Cost to max |
+|---|---|---|
+| Brass Cauldron | +50% embers earned | 1900 coins |
+| Hanging Herb Wall | +50% coins earned | 2900 coins |
+| Reading Tea Corner | -20% expedition duration | 3900 coins |
+
+Level 0 = unlocked but not built. `computeFixtureBonuses` sums across all fixtures — used by profile on level-win rewards and expedition start.
+
+### Progressive unlocks
+
+- **Hub** at `highestUnlocked >= 3` (level 4 cleared) — win screen offers "Back to Apothecary" instead of "Next level"
+- **Companions tab** at `highestUnlocked >= 6` (level 7 cleared) — locked chip on hub until then
+- **Expeditions tab** at `highestUnlocked >= 9` (level 10 cleared)
+- First launch: game screen only, boots straight into level 1
+
+### Board integration
+
+**Passive**: equipped companion's `chargedDropBoost` (or `globalDropBoost`) multipliers are applied to the level's `dropWeights` at `newGame` time via `applyDropMultipliers`. Keeps the engine unaware of companions.
+
+**Active**: affinity-color matches per turn are tallied in the GameScreen via `chargeFromEvents(events, color)`. When `charge >= ability.cost`, the ability bar arms; tapping it calls `castAbility(state, ability, seed)` which returns a new board:
+- `spawnPrism` / `spawnBomb`: pick a random plain colored cell (no blocker, no special) and transform it
+- `shuffleBoard`: call the engine's `reshuffle`
+
+Cast doesn't consume a move. Charge resets. Deterministic given seed.
+
+### New tunable knobs
+
+| Knob | Location |
+|---|---|
+| Gacha rates + pity thresholds | `src/companions/gacha.ts` |
+| XP curves + evolution requirements | `src/companions/catalog.ts` |
+| Expedition durations / base rewards / rarity multipliers | `src/expeditions/{types,rewards}.ts` |
+| Fixture costs / effects | `src/hub/fixtures.ts` |
+| Per-level-win reward formula | `src/economy/rewards.ts` |
+| Unlock gates | `src/state/profile.ts` (`UNLOCK_HUB_AT`, `UNLOCK_COMPANIONS_AT`, `UNLOCK_EXPEDITIONS_AT`) |
+
+### Tests added (36 new, 93 total)
+
+- gacha: rates distribution, epic/legendary pity, duplicates → shards, determinism, rate sum
+- progression: level-up cascade, XP cap, evolve level/shard gates, tier passives
+- expedition rewards: base+jitter, rarity scaling, gem chance, ms helpers, determinism
+- hub fixtures: upgrade cost, bonus composition
+- companion effects: passive multipliers, charge counting, active cast (spawn variants, shuffle)
+- economy rewards: loss zeros out, positive on win, scales with score
+
+### Known limitations / follow-ups
+
+- No visual tier-change art yet — companion tier is text on the collection card
+- Active ability cast doesn't play any animation; the board just updates. Skia-particle flourish is Phase 3.5 polish
+- Expedition timer is device-local — if the player changes the clock backward, they wait longer. Anti-cheat requires server-side stamping (Phase 5)
+- Companions unlock at cleared-level 7 as the brief specifies; the first free companion is via a gacha pull with earned embers. If a player never pulls, they never see companions — consider a **first-companion grant** on hitting the unlock gate as a onboarding polish pass
+- Battle pass, subscription, and gem economy are Phase 4
+
+---
+
+
+
 ## Phase 1 — Engine + Board Renderer
 
 - Pure-TS deterministic Match-3 engine at `src/engine/` (zero React deps).
