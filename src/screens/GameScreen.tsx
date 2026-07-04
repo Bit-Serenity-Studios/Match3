@@ -33,6 +33,7 @@ import { ContinueScreen } from './ContinueScreen';
 import { summarizeFail, CONTINUE_EXTRA_MOVES, priceForContinue } from '../monetization/continue';
 import { getMonetization } from '../monetization/singleton';
 import { track } from '../telemetry/logger';
+import { useRetention } from '../state/retention';
 
 function normalizeGrantsForTelemetry(
   g: import('../monetization/types').Grants,
@@ -174,6 +175,9 @@ export function GameScreen() {
           progressPassChallenge('daily.win3', 1, Date.now());
           progressPassChallenge('weekly.win15', 1, Date.now());
           progressPassChallenge('weekly.coins500', rew.coins, Date.now());
+          if (tunedLevel.archetype === 'wow') {
+            useRetention.getState().registerWowLevelCleared();
+          }
           track('level_finished', {
             levelId: r.next.levelId,
             result: 'won',

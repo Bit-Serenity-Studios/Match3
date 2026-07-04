@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Screen = 'game' | 'hub' | 'store' | 'pass' | 'devDashboard';
+export type Screen = 'game' | 'hub' | 'store' | 'pass' | 'devDashboard' | 'daily';
 export type HubTab = 'fixtures' | 'companions' | 'expeditions';
 
 interface UIState {
@@ -15,6 +15,7 @@ interface UIState {
   goToStore(): void;
   goToPass(): void;
   goToDevDashboard(): void;
+  goToDaily(): void;
   setHubTab(t: HubTab): void;
   openContinue(): void;
   closeContinue(): void;
@@ -38,6 +39,7 @@ export const useUI = create<UIState>((set) => ({
   goToStore: () => set({ screen: 'store' }),
   goToPass: () => set({ screen: 'pass' }),
   goToDevDashboard: () => set({ screen: 'devDashboard' }),
+  goToDaily: () => set({ screen: 'daily' }),
   setHubTab: (t) => set({ hubTab: t }),
   openContinue: () => set({ continueOpen: true }),
   closeContinue: () => set({ continueOpen: false }),

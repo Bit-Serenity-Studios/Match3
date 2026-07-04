@@ -1,5 +1,143 @@
 # Phase Notes
 
+## Phase 6 — Retention Layer
+
+### Data flow
+
+```
+src/retention/
+  calendar.ts     # 7-day escalating login cycle, UTC-day math,
+                  # decay on miss (2+ day gap resets pointer)
+  notifications.ts# NotificationScheduler adapter + MockScheduler,
+                  # soft-ask policy, static copy, planNotifications
+  dailyBrew.ts    # UTC-day-seeded daily level pick from non-tutorial
+                  # pool, deterministic hashDay, per-day claim gate
+  index.ts
+
+src/state/retention.ts  # Zustand+AsyncStorage store
+                        # (calendar, brew, notification permission,
+                        #  firstLaunchAt, clearedWowLevels)
+                        # + setScheduler() singleton swap
+
+src/screens/DailyScreen.tsx  # 7-day calendar UI, daily brew entry
+```
+
+### Daily calendar
+
+7-day cycle, UTC-boundary. Rewards escalate: coins-only day 1 → gems +
+embers + coins on day 7 (60🪙 → 250🪙 + 25💎 + 15🔥 finale). One
+`claimDailyLogin` per UTC day. Miss two days in a row and the pointer
+resets — `decayOnMiss` runs on `refreshCalendar` at app boot.
+
+Completed cycles counter is cosmetic — it's the "weeks logged in" flex
+we can surface later.
+
+### Soft-ask policy for notifications
+
+Never on first launch. Never before the first "wow" level clear (a
+"first big moment" — per the brief). Fires exactly once per install.
+
+```
+shouldSoftAsk({
+  permission: 'unknown',       // haven't been asked yet
+  clearedWowLevels: 1,          // wow-clear tracked in retention store
+  hasBeenAsked: false,          // one shot only
+  isFirstLaunch: false,         // don't ambush the first-run flow
+});
+```
+
+Wired via a `SoftAskBanner` on the hub — visible only when eligible.
+Response updates `notificationPermission` in the store. On grant, the
+scheduler's `requestPermission()` is called (mock returns 'granted';
+real adapter is where the OS prompt happens).
+
+### Notification content + planner
+
+Four reasons, all with static, author-controlled copy — never
+dynamic strings from external state.
+
+| Reason               | Copy                                                         |
+|----------------------|--------------------------------------------------------------|
+| expedition_complete  | "The kettle whistles." / "A companion has returned. Claim their haul." |
+| lives_refilled       | "Full lives." / "The moon has refilled the lamp. Come brew." |
+| streak_at_risk       | "Your streak is waiting." / "Keep the fire going before it fades." |
+| lapsed_day3          | "The garden misses you." / "A rare bloom awaits your return." |
+
+`planNotifications({expeditionEndsAt, livesFullAt, streakAtRiskAt,
+lastActiveAt, now})` returns the set to schedule. IDs are stable per
+reason so a reschedule replaces rather than duplicates.
+
+`NotificationScheduler` adapter contract:
+
+```ts
+interface NotificationScheduler {
+  schedule(n: ScheduledNotification): Promise<void>;
+  cancel(id: string): Promise<void>;
+  cancelAll(): Promise<void>;
+  listScheduled(): Promise<ScheduledNotification[]>;
+  requestPermission(): Promise<NotificationPermission>;
+}
+```
+
+`MockScheduler` (default) keeps `scheduled[]` in memory. An
+Expo-notifications adapter slots in at App boot via `setScheduler()`.
+
+### Daily Brew challenge
+
+One seeded level per UTC day, drawn from the non-tutorial level pool
+(55 levels). The seed is `hashDay(startOfUTCDay) ^ level.seed` — same
+level for every player worldwide on the same UTC day, but a different
+seed than the campaign, so it plays fresh.
+
+State: `lastClaimedDay`, `lastPlayedDay`, `streak`. One claim per UTC
+day. Win grants 200🪙 + 15🔥 + 10💎; loss grants nothing but marks
+the day (streak resets on loss).
+
+Deterministic engine + pure hashDay = no backend required to sync
+which level is today's brew.
+
+### Tunable knobs added in Phase 6
+
+| Knob                             | Location |
+|----------------------------------|---|
+| 7-day reward ladder              | `retention/calendar.ts` (`CALENDAR_REWARDS`) |
+| Cycle length                     | `retention/calendar.ts` (`CALENDAR_CYCLE_DAYS`) |
+| Missed-day decay threshold       | `retention/calendar.ts` (`decayOnMiss`, hard-coded 2 days) |
+| Daily brew rewards + streak    | `retention/dailyBrew.ts` (`DAILY_BREW_REWARDS`) |
+| Daily brew level pool             | `retention/dailyBrew.ts` (`DAILY_BREW_POOL`) |
+| Notification copy (4 reasons)    | `retention/notifications.ts` (`NOTIFICATION_COPY`) |
+| Lapsed-player threshold          | `retention/notifications.ts` (`planNotifications`, 3 days) |
+| Soft-ask trigger + copy          | `retention/notifications.ts` (`shouldSoftAsk`) + `HubScreen.tsx` |
+
+### Tests added (27 new, 196 total)
+
+- calendar: UTC-day math, monotonic day index, day-1 grant, no double
+  claim, day-7 rolls to a new cycle, decay on 2+ day gap
+- daily brew: pool excludes tutorial, per-UTC-day determinism, hash
+  stability, per-day claim gate, streak win/loss handling
+- notifications: static copy invariant, stable IDs per reason,
+  soft-ask policy (first-launch/wow-clear/asked-once), planNotifications
+  filters past reasons + lapsed_day3 at exactly +3d, MockScheduler
+  schedule/cancel/list roundtrip
+
+### Known limitations / follow-ups
+
+- Daily Brew entry point exists but the "actually play the daily brew"
+  screen still routes through the shared `GameScreen` — Phase-6.5 polish
+  is a dedicated `DailyBrewScreen.tsx` that swaps in `levelForDay(today)`
+  as the level, skips streak accounting for the campaign streak, and
+  wires the reward path to `claimDailyBrew(now, won)`.
+- `NotificationScheduler` is fully mocked. The Expo-notifications
+  adapter is a straight port — the interface holds. Not pulled in as a
+  dep here to keep Expo Go install lean.
+- Soft-ask copy is a placeholder; a real localization pass moves the
+  strings into an i18n table and a designer picks less on-brand copy.
+- Calendar decay is per-2-day gap; if a player plays every 2 days
+  exactly, they'd never trigger decay but also never advance. Consider
+  a "grace day" flag for players who play daily on their first cycle.
+
+---
+
 ## Phase 5 — Telemetry + LiveOps Hooks
 
 ### Data flow

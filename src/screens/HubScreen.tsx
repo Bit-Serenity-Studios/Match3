@@ -11,6 +11,7 @@ import { palette, spacing, typography, radii } from '../theme';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
 import { track } from '../telemetry/logger';
+import { useRetention } from '../state/retention';
 import { FIXTURES, upgradeCost } from '../hub/fixtures';
 import { COMPANIONS, getCompanion } from '../companions/catalog';
 import { pull, PULL_COST_EMBERS } from '../companions/gacha';
@@ -57,6 +58,20 @@ export function HubScreen() {
         <Currency label="Embers" value={embers} color="#e97e7e" />
         <Currency label="Gems" value={gems} color={palette.purple} />
       </View>
+
+      <View style={styles.topRow}>
+        <Pressable style={styles.linkBtn} onPress={() => useUI.getState().goToDaily()}>
+          <Text style={styles.linkLabel}>Daily</Text>
+        </Pressable>
+        <Pressable style={styles.linkBtn} onPress={() => useUI.getState().goToStore()}>
+          <Text style={styles.linkLabel}>Store</Text>
+        </Pressable>
+        <Pressable style={styles.linkBtn} onPress={() => useUI.getState().goToPass()}>
+          <Text style={styles.linkLabel}>Pass</Text>
+        </Pressable>
+      </View>
+
+      <SoftAskBanner />
 
       <View style={styles.tabs}>
         <TabBtn label="Fixtures" active={tab === 'fixtures'} onPress={() => setTab('fixtures')} />
@@ -161,6 +176,36 @@ function FixturesTab() {
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function SoftAskBanner(): React.ReactElement | null {
+  const shouldPrompt = useRetention((s) => s.shouldPromptSoftAsk(Date.now()));
+  const handle = useRetention((s) => s.handleSoftAskResponse);
+  if (!shouldPrompt) return null;
+  return (
+    <View style={styles.softAsk}>
+      <Text style={[typography.body, { color: palette.parchment }]}>
+        Want a nudge when your kettle's ready?
+      </Text>
+      <Text style={typography.small}>
+        We'll notify you when lives fill and expeditions return. Nothing else.
+      </Text>
+      <View style={styles.softAskRow}>
+        <Pressable
+          style={styles.softAskYes}
+          onPress={() => handle(true, Date.now())}
+        >
+          <Text style={styles.softAskYesLabel}>Sure</Text>
+        </Pressable>
+        <Pressable
+          style={styles.softAskNo}
+          onPress={() => handle(false, Date.now())}
+        >
+          <Text style={styles.softAskNoLabel}>Not now</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -459,6 +504,50 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
+  topRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  linkBtn: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: palette.bgSurface2,
+    alignItems: 'center',
+    borderColor: palette.border,
+    borderWidth: 1,
+  },
+  linkLabel: { color: palette.parchment, fontWeight: '600' },
+  softAsk: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.candlelightSoft,
+    borderWidth: 1,
+    borderRadius: radii.md,
+  },
+  softAskRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  softAskYes: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: palette.candlelight,
+    alignItems: 'center',
+  },
+  softAskNo: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: palette.bgSurface2,
+    alignItems: 'center',
+  },
+  softAskYesLabel: { color: palette.bgDeep, fontWeight: '700' },
+  softAskNoLabel: { color: palette.parchmentDim },
   currency: {
     flex: 1,
     backgroundColor: palette.bgSurface,
