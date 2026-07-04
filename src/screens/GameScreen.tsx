@@ -32,6 +32,19 @@ import { getFlags } from '../state/featureFlags';
 import { ContinueScreen } from './ContinueScreen';
 import { summarizeFail, CONTINUE_EXTRA_MOVES, priceForContinue } from '../monetization/continue';
 import { getMonetization } from '../monetization/singleton';
+import { track } from '../telemetry/logger';
+
+function normalizeGrantsForTelemetry(
+  g: import('../monetization/types').Grants,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (g.coins) out.coins = g.coins;
+  if (g.gems) out.gems = g.gems;
+  if (g.embers) out.embers = g.embers;
+  if (g.lives) out.lives = g.lives;
+  if (g.extraMoves) out.extraMoves = g.extraMoves;
+  return out;
+}
 
 function buildLevelForPlayer(
   level: LevelDef,
@@ -113,10 +126,20 @@ export function GameScreen() {
   const [castSeed, setCastSeed] = useState(0);
 
   useEffect(() => {
-    setState(initialState(tunedLevel, consecutiveFails[tunedLevel.id] ?? 0));
+    const fails = consecutiveFails[tunedLevel.id] ?? 0;
+    setState(initialState(tunedLevel, fails));
     setEnded(false);
     setCharge(0);
-  }, [tunedLevel, consecutiveFails]);
+    track('level_started', {
+      levelId: tunedLevel.id,
+      archetype: tunedLevel.archetype,
+      attempt: fails + 1,
+      seed: tunedLevel.seed,
+      difficultyMod: 0,
+      boostersUsed: {},
+      companionId: equippedId ?? null,
+    });
+  }, [tunedLevel, consecutiveFails, equippedId]);
 
   const boardSize = Math.min(dims.width - spacing.lg * 2, 420);
   const companion = equippedId ? getCompanion(equippedId) : null;
@@ -140,6 +163,8 @@ export function GameScreen() {
       setState(r.next);
       if (r.next.status !== 'active' && !ended) {
         setEnded(true);
+        const attemptsUsed =
+          useMonetization.getState().continueAttemptsThisLevel;
         if (r.next.status === 'won') {
           const rew = rewardsFor(r.next);
           registerWin(r.next.levelId, rew);
@@ -149,11 +174,40 @@ export function GameScreen() {
           progressPassChallenge('daily.win3', 1, Date.now());
           progressPassChallenge('weekly.win15', 1, Date.now());
           progressPassChallenge('weekly.coins500', rew.coins, Date.now());
+          track('level_finished', {
+            levelId: r.next.levelId,
+            result: 'won',
+            score: r.next.score,
+            turnsTaken: r.next.turn,
+            movesRemained: r.next.movesRemaining,
+            boostersUsed: {},
+            attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
+            continuePurchased: attemptsUsed > 0,
+          });
         } else if (getFlags().continueScreen) {
           openContinue();
+          track('level_failed', {
+            levelId: r.next.levelId,
+            failMarginPerObjective: r.next.progress.map((p, i) => ({
+              index: i,
+              margin: p.done ? 0 : Math.max(0, 1 - p.progress / p.target),
+            })),
+            score: r.next.score,
+            turnsTaken: r.next.turn,
+          });
         } else {
           registerLoss(r.next.levelId);
           streakLoss();
+          track('level_finished', {
+            levelId: r.next.levelId,
+            result: 'lost',
+            score: r.next.score,
+            turnsTaken: r.next.turn,
+            movesRemained: r.next.movesRemaining,
+            boostersUsed: {},
+            attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
+            continuePurchased: false,
+          });
         }
       }
     },
@@ -229,10 +283,15 @@ export function GameScreen() {
   const onWatchRescueAd = useCallback(async () => {
     const now = Date.now();
     if (!canShowAd('outOfLivesRescue', now)) return;
+    track('ad_requested', { placement: 'outOfLivesRescue' });
     const r = await getMonetization().showRewardedAd('outOfLivesRescue', {});
     if (!r) return;
     noteAdShown('outOfLivesRescue', now);
     applyGrants(r.grants, now);
+    track('ad_completed', {
+      placement: 'outOfLivesRescue',
+      grants: normalizeGrantsForTelemetry(r.grants),
+    });
   }, [canShowAd, noteAdShown, applyGrants]);
 
   const objectiveLabel = useCallback(
@@ -267,9 +326,11 @@ export function GameScreen() {
       <View style={styles.header}>
         <View>
           <Text style={typography.h1}>Moonpetal Apothecary</Text>
-          <Text style={typography.small}>
-            {level.id} · {level.archetype}
-          </Text>
+          <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
+            <Text style={typography.small}>
+              {level.id} · {level.archetype} · v0.4
+            </Text>
+          </Pressable>
         </View>
         {hubUnlocked && (
           <Pressable style={styles.hubBtn} onPress={() => goToHub()}>

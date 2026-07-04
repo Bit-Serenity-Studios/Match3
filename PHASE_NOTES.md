@@ -1,5 +1,139 @@
 # Phase Notes
 
+## Phase 5 — Telemetry + LiveOps Hooks
+
+### Data flow
+
+```
+src/telemetry/
+  events.ts          # AnyEvent discriminated union, one payload per action
+  queue.ts           # pure queue + analytics helpers
+                     #   - QUEUE_CAP ring
+                     #   - Transport interface + NullTransport
+                     #   - computeApsFromPlay / computeFailMargins / funnelCounts
+  logger.ts          # Zustand+AsyncStorage store + track() ergonomic helper
+                     #   startSession / endSession / clear / exportJson
+  index.ts
+
+src/screens/DevDashboardScreen.tsx  # hidden — long-press version → open
+                                    # 4 tabs: APS, Fail Δ, Funnel, Events
+                                    # export queue as JSON, clear queue
+```
+
+### Instrumentation surface
+
+Events fired today (all pure `track(type, payload)` calls, no boilerplate at
+call sites):
+
+| Event                 | Where                                       |
+|-----------------------|---------------------------------------------|
+| `session_start`       | App.tsx effect on mount                     |
+| `session_end`         | App.tsx effect on unmount                   |
+| `level_started`       | GameScreen `useEffect` on `tunedLevel` change |
+| `level_finished`      | GameScreen swap handler (on won/lost)       |
+| `level_failed`        | GameScreen swap handler (before continue)   |
+| `store_open`          | StoreScreen mount                           |
+| `offer_shown`         | Monetization store `maybeMintOffer`         |
+| `offer_purchased`     | StoreScreen buy flow                        |
+| `ad_requested/completed` | GameScreen rewarded-ad handler + hub-return |
+| `gacha_pull`          | HubScreen `doPull`                          |
+| `expedition_start`    | HubScreen dispatch                          |
+| `expedition_claim`    | HubScreen claim                             |
+
+### Public API
+
+```ts
+import { track } from '../telemetry/logger';
+track('level_failed', {
+  levelId: 'level-018',
+  failMarginPerObjective: [{ index: 0, margin: 0.15 }],
+  score: 2400,
+  turnsTaken: 22,
+});
+```
+
+`useTelemetry` (Zustand store) exposes `startSession`, `endSession`,
+`logEvent`, `clear`, `exportJson`, `filter`, `countByType`.
+
+### Dev Dashboard
+
+Hidden behind a long-press on the version/subtitle label. Accessible from
+either the GameScreen header or the HubScreen subtitle. Four tabs:
+
+- **APS** — per-level attempts / wins from real play, side-by-side with
+  archetype labels so you can compare against Phase-2 sim bands.
+- **Fail Δ** — median fail-margin per level. Cross-check against the
+  simulator's `failΔ` column to spot levels where real players fail
+  differently than the myopic bot.
+- **Funnel** — session → level start → level win → store open → offer
+  shown → offer purchased → ad completions.
+- **Events** — last 40 events (raw JSON payloads) for eyeballing what
+  really fired.
+
+Actions: **Export JSON** (preview into the screen; real ship would copy to
+clipboard) and **Clear queue** (rotate the local ring).
+
+### Analytics helpers
+
+`computeApsFromPlay` returns `Infinity` for levels never won — the
+dashboard tags these visually so we know it's a "no data" case, not a
+"trivial" case. `computeFailMargins` averages within a fail, then takes
+the median across fails (matches the simulator's runner behavior).
+
+### Storage & queue policy
+
+- Queue is capped at `QUEUE_CAP = 5000` events (ring). Overflow is
+  counted in `droppedEvents` so we can flag heavy sessions in the
+  dashboard.
+- Persistence: AsyncStorage via Zustand's `persist` middleware. Written
+  on every event append; a real production build could batch this at
+  every N events, but at 5k cap the write cost is not measured to matter
+  in Expo Go on a mid-tier Android.
+- `Transport` is a one-method interface (`send(events)`). Default is
+  `NullTransport` (in-memory sink). A future remote sink implements the
+  same interface — `flushTelemetry(transport, now)` clears the queue on
+  success.
+
+### Jest setup for persisted stores
+
+Added `jest.setup.ts` — mocks `@react-native-async-storage/async-storage`
+with an in-memory Map so Zustand `persist` doesn't reach for `window.
+localStorage` under Node. Loaded via `setupFiles` in `jest.config.js`.
+
+### Tunable knobs added in Phase 5
+
+| Knob                        | Location                    |
+|-----------------------------|-----------------------------|
+| Queue ring cap              | `telemetry/queue.ts` (`QUEUE_CAP`) |
+| App version tag on session  | `App.tsx` (`APP_VERSION`)   |
+| Long-press delay to open dashboard | `HubScreen.tsx` / `GameScreen.tsx` (`delayLongPress={800}`) |
+
+### Tests added (13 new, 169 total)
+
+- queue: cap enforcement, event count grouping, null transport
+- APS math: per-level attempts/wins ratio, Infinity on never-won
+- fail-margins: median across fails
+- funnel counts: full journey shape
+- logger: startSession seeds id + emits event, auto-open session on
+  orphan log, exportJson valid, clear, countByType grouping
+
+### Known limitations / follow-ups
+
+- Session end is fired from a `useEffect` cleanup — Expo hot-reload will
+  churn session_start/end pairs during dev. Fine for the dashboard, may
+  distort funnel math when developing a screen. Real ship uses
+  `AppState.addEventListener` for background/foreground detection.
+- Ad-completions log grant amounts as a flat record; the schema loses
+  booster payloads. Extend `AdCompleted` payload if we need booster-
+  granular rewarded-ad tuning.
+- Dashboard "Export JSON" only previews the first 80 chars — needs
+  Expo Clipboard integration (not pulled in as a dep) to actually copy.
+- The queue is per-device, never uploaded. A `Transport` implementation
+  posting to an S3 bucket would give us multi-device rollups — not in
+  scope for Phase 5.
+
+---
+
 ## Phase 4 — Economy + Monetization (behind feature flags)
 
 ### Data flow

@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
+import { track } from '../telemetry/logger';
 import { FIXTURES, upgradeCost } from '../hub/fixtures';
 import { COMPANIONS, getCompanion } from '../companions/catalog';
 import { pull, PULL_COST_EMBERS } from '../companions/gacha';
@@ -42,7 +43,9 @@ export function HubScreen() {
       <View style={styles.header}>
         <View>
           <Text style={typography.h1}>Apothecary</Text>
-          <Text style={typography.small}>Between the moon and the kettle.</Text>
+          <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
+            <Text style={typography.small}>Between the moon and the kettle. · v0.4</Text>
+          </Pressable>
         </View>
         <Pressable style={styles.playBtn} onPress={goToGame}>
           <Text style={styles.playLabel}>Play</Text>
@@ -181,6 +184,13 @@ function CompanionsTab() {
     const r = pull(pity, ownedIds);
     addCompanion(r.outcome.companion.id, r.outcome.isNew, r.outcome.shardsAwarded);
     setPity(r.pity);
+    track('gacha_pull', {
+      rarity: r.outcome.companion.rarity,
+      companionId: r.outcome.companion.id,
+      isNew: r.outcome.isNew,
+      shardsAwarded: r.outcome.shardsAwarded,
+      cost: PULL_COST_EMBERS,
+    });
     setLastPull({
       name: r.outcome.companion.name,
       rarity: r.outcome.companion.rarity,
@@ -336,6 +346,10 @@ function ExpeditionsTab() {
           disabled={!pickCompanion || active.length >= MAX_SLOTS}
           onPress={() => {
             if (pickCompanion && start(pickCompanion, pickDuration, Date.now())) {
+              track('expedition_start', {
+                companionId: pickCompanion,
+                duration: pickDuration,
+              });
               setPickCompanion(null);
             }
           }}
@@ -369,7 +383,19 @@ function ExpeditionsTab() {
             <View style={styles.cardFooter}>
               <Pressable
                 disabled={!ready}
-                onPress={() => claim(i, Date.now())}
+                onPress={() => {
+                  const rew = claim(i, Date.now());
+                  if (rew) {
+                    track('expedition_claim', {
+                      companionId: e.companionId,
+                      duration: e.duration,
+                      coins: rew.coins,
+                      embers: rew.embers,
+                      gems: 0,
+                      shards: 0,
+                    });
+                  }
+                }}
                 style={[styles.smallBtn, !ready && styles.smallBtnDisabled]}
               >
                 <Text style={styles.smallBtnLabel}>{ready ? 'Claim' : 'Waiting…'}</Text>

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
@@ -6,6 +6,7 @@ import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useUI } from '../state/ui';
 import { getMonetization } from '../monetization/singleton';
+import { track } from '../telemetry/logger';
 import {
   GEM_PACKAGES,
   STARTER_BUNDLE,
@@ -68,6 +69,9 @@ function badgeStyleFor(badge: 'best_value' | 'popular' | 'anchor') {
 }
 
 export function StoreScreen(): React.ReactElement {
+  useEffect(() => {
+    track('store_open', { source: 'hub' });
+  }, []);
   const gems = useProfile((s) => s.gems);
   const coins = useProfile((s) => s.coins);
   const embers = useProfile((s) => s.embers);
@@ -103,6 +107,9 @@ export function StoreScreen(): React.ReactElement {
         return;
       }
       purchaseProduct(product, Date.now());
+      if (product.kind === 'segmentedOffer') {
+        track('offer_purchased', { sku: product.sku, levelId: 'unknown' });
+      }
     },
     [purchaseProduct, crackPiggy, activateSubscription, unlockPassPremium],
   );

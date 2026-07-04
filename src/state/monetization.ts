@@ -284,6 +284,14 @@ export const useMonetization = create<MonetizationSlice>()(
         set({
           activeOffers: [...purgeExpired(s.activeOffers, now), offer],
         });
+        // Lazy require to sidestep any startup import cycle with the logger.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { track } = require('../telemetry/logger') as typeof import('../telemetry/logger');
+        track('offer_shown', {
+          sku: offer.sku,
+          levelId: offer.levelId,
+          reason: offer.reason,
+        });
         return offer;
       },
       purgeOffers(now) {
