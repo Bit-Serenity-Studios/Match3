@@ -1,5 +1,215 @@
 # Phase Notes
 
+## Phase 4 — Economy + Monetization (behind feature flags)
+
+### Data flow
+
+```
+src/monetization/           # pure-TS, zero React
+  types.ts                  # Grants, ProductDef, AdPlacement, BoosterId
+  provider.ts               # MonetizationProvider iface + MockProvider
+                            #   + rollMysteryBox + MYSTERY_BOX_TABLE
+  catalog.ts                # gem SKUs (decoy anchor), starter bundle,
+                            #   piggy unlock, subscription, battle pass
+  lives.ts                  # 5 max, 30-min regen, sync/spendLife/grantLives
+  streak.ts                 # 3/5/7 tiers, pre-level booster grants
+  continue.ts               # priceForContinue + summarizeFail
+  offers.ts                 # segmented-offer detection + mint
+  piggyBank.ts              # drip / crack / cap
+  ads.ts                    # daily caps + interstitial gap policy
+  battlePass.ts             # 14-day mini-pass, XP, challenges, rewards
+  subscription.ts           # Apprentice's Oath state helpers
+  singleton.ts              # app-wide provider instance (Mock by default)
+  index.ts
+
+src/state/
+  featureFlags.ts           # all Phase-4 surfaces are flagged
+  monetization.ts           # Zustand+AsyncStorage persistence store
+                            #   (lives, streak, piggy, ads, pass,
+                            #    subscription, boosters, offers)
+  profile.ts (extended)     # addCurrency, spendGems
+
+src/screens/
+  ContinueScreen.tsx        # +5 moves priced in gems; streak-at-risk
+                            # copy; watch-ad rescue option
+  StoreScreen.tsx           # gem packages + starter + piggy + sub + pass
+  PassScreen.tsx            # XP bar, challenges list, reward tracks
+  GameScreen.tsx (extended) # routes fail into ContinueScreen, wires
+                            # streak / piggy / pass-challenge progress,
+                            # segmented-offer trigger on give-up
+```
+
+### MonetizationProvider interface
+
+Adapter contract — RevenueCat / AdMob adapters slot in here at App boot
+via `setMonetization()`.
+
+```ts
+interface MonetizationProvider {
+  init(): Promise<void>;
+  listProducts(): Promise<ProductDef[]>;
+  purchase(sku): Promise<PurchaseResult>;
+  restore(): Promise<PurchaseResult[]>;
+  subscribe(sku): Promise<PurchaseResult>;
+  querySubscription(sku): Promise<SubscriptionStatus>;
+  loadRewardedAd(placement): Promise<void>;
+  showRewardedAd(placement, ctx?): Promise<AdRewardResult | null>;
+  loadInterstitial(): Promise<void>;
+  showInterstitial(): Promise<boolean>;
+}
+```
+
+`MockProvider` returns instant success, logs every call to
+`provider.log[]` (visible to the Phase-5 dev dashboard).
+
+### State split — persistent vs ephemeral
+
+**Persistent (monetization store, `AsyncStorage`):**
+lives + refill epoch, streak count+best, piggy balance + cycleId,
+`purchasedSkus[]` + `everPurchased` flag (kills interstitials),
+active offers with expiry, ad counters keyed by day, battle pass season
++ xp + claimed sets, subscription expiry, boosters inventory,
+`continueAttemptsThisLevel`.
+
+**Ephemeral (UI store, not persisted):**
+`continueOpen`, `pendingOfferSku`, current screen.
+
+### Fail-state → continue → offer flow
+
+1. Player runs out of moves → `ContinueScreen` overlays the board.
+2. Screen shows exact remaining objectives ("Only 2 vials left!") from
+   `summarizeFail()` and the streak that will be lost.
+3. Player either:
+   - buys `+5 Moves` for `priceForContinue(attemptIndex)` gems
+     (`[40, 65, 95]` escalating) — profile debits, state resumes with
+     `movesRemaining += 5`, streak preserved
+   - watches a rescue rewarded ad (capped) — `MockProvider` grants +1 life
+   - gives up → streak resets, `maybeMintOffer` runs. On the 3rd
+     consecutive fail of a level a segmented offer is minted with a
+     15-min TTL and boosters picked to counter the level's dominant
+     obstacle (frost glass → color bomb + hammer, ivy → hammer +
+     extra moves, color objective → color bomb of that color, etc.)
+
+### Gem store decoy anchoring
+
+| SKU              | Price   | Gems | $/gem  | Badge      |
+|------------------|---------|------|--------|------------|
+| gems.small       | $0.99   | 20   | $0.049 | –          |
+| gems.medium      | $4.99   | 120  | $0.042 | popular    |
+| gems.large       | $9.99   | 260  | $0.038 | best_value |
+| gems.whale       | $49.99  | 1200 | $0.042 | anchor     |
+
+The whale SKU exists to anchor perception — its per-gem rate is worse
+than `gems.large`, making the large tier read as a bargain. Test in
+`catalog.test.ts` verifies this invariant (anchor rate < best rate).
+
+### Piggy Bank
+
+Drips gems from play (level win: +1, hard-level win: +3, expedition
+claim: +2) into a locked balance capped at 250. A one-time IAP
+(`piggy.unlock`, $2.99) transfers the balance and starts a new cycle
+(`cycleId++`), so the bank refills across sessions.
+
+### Rewarded ads
+
+Placement → daily cap:
+
+| Placement              | Cap |
+|------------------------|-----|
+| outOfLivesRescue       | 2   |
+| coinDoublePostLevel    | 3   |
+| mysteryBoxDaily        | 1   |
+| interstitialHubReturn  | 4   |
+
+Interstitials only trigger on return-to-hub transitions and are
+suppressed entirely for anyone with `everPurchased=true` OR active
+subscription. Minimum 3 minutes between interstitials.
+
+Mystery Box table: 55/25/12/6/2 for
+small-coins/medium-coins/embers/medium-gems/jackpot-gems. Deterministic
+given seed. Extra-moves are ONLY sold for gems or granted by the
+rescue ad — no meta reward path grants extra moves (per brief).
+
+### Battle Pass (Mini-Pass)
+
+14-day seasons. Season 0 anchor: 2025-01-05T00:00:00Z; `seasonIdFor(now)`
+derives the current season. `XP_PER_LEVEL = 100`, `PASS_LEVELS = 30`.
+30 reward levels, both tracks (free stingy; premium seeds gems every
+5 levels). Challenges refresh on season rollover.
+
+Challenge → XP → pass level → reward claim. Claim is idempotent per
+`level×track`. Premium requires the $4.99 `pass.mini14.premium` IAP.
+
+### Apprentice's Oath subscription
+
+30-day period, +5 gems/day drip claimable on a 24h cooldown, cosmetic
+nameplate flag, no interstitials. `activate()` extends past current
+expiry (safe to double-buy).
+
+### Feature flags
+
+`src/state/featureFlags.ts` exposes `getFlags()` / `setFlags()`. All
+Phase-4 surfaces (store, continue, piggy, ads, pass, subscription,
+starter, offers) can be individually toggled — a build shipping any
+subset is possible with zero code changes.
+
+### Tunable knobs added in Phase 4
+
+| Knob                                              | Location |
+|---------------------------------------------------|---|
+| Continue price ladder (gems)                      | `monetization/continue.ts` (`CONTINUE_PRICE_GEMS`) |
+| Extra-moves granted per continue                  | `monetization/continue.ts` (`CONTINUE_EXTRA_MOVES`) |
+| Segmented offer trigger threshold + TTL           | `monetization/offers.ts` |
+| Gem SKU pricing + gem counts                      | `monetization/catalog.ts` (`GEM_PACKAGES`) |
+| Starter bundle + subscription payloads            | `monetization/catalog.ts` |
+| Life max + regen minutes                          | `monetization/lives.ts` |
+| Streak tier thresholds + booster grants           | `monetization/streak.ts` |
+| Piggy cap + drip amounts                          | `monetization/piggyBank.ts` |
+| Daily ad caps + interstitial gap                  | `monetization/ads.ts` |
+| Mystery-box payout table                          | `monetization/provider.ts` |
+| Pass season length + XP curve + rewards           | `monetization/battlePass.ts` |
+| Subscription period + daily drip amount           | `monetization/subscription.ts` |
+| All feature flags                                 | `state/featureFlags.ts` |
+
+### Tests added (63 new, 156 total)
+
+- lives: full-start, regen accrual, cap clamp, timer clearing, empty spendLife
+- streak: tier thresholds, win increment, loss reset, continue preserves
+- piggy: drip cap, ignore-negatives, crack payout + cycle
+- ads: daily cap enforcement, day rotation, purchaser/subscriber
+       interstitial blocks, min-gap policy, per-placement independence
+- continue: price monotonicity + cap, summarizeFail objective breakout
+- offers: trigger condition, dominant-obstacle detection, blocker-specific
+       booster contents, TTL stamping, purge expired
+- catalog: decoy anchor invariant, starter bundle grants,
+       best_value SKU has best $/gem rate
+- provider (mock): purchase happy/error path, subscribe filter, coin-double
+       returns baseCoins, rescue grants life, mystery box determinism +
+       rare jackpot band
+- battle pass: season roll, challenge progress + XP, idempotent claims,
+       premium gating, pass-level formula
+- subscription: activate stamps 30d, daily drip 24h cooldown, expiry
+
+### Known limitations / follow-ups
+
+- No real IAP receipt validation — `MockProvider.restore()` returns an
+  empty list. A RevenueCat adapter replaces this with server-side
+  entitlement checks.
+- `everPurchased` is set on any successful purchase (including offers
+  and gem SKUs); a real production build may want to distinguish "high
+  intent" purchasers (subscription, starter) from a single tiny gem buy.
+- Segmented offers are stored globally; a per-level cap limits abuse
+  (one active offer per level) but multiple stuck levels can queue up.
+  Consider a global cap of 2 concurrent offers.
+- Ad-provider adapter (AdMob) still needs writing — the interface is
+  ready, but frequency capping + eCPM shaping remain to be tuned with
+  Phase-5 telemetry data.
+- Continue-screen doesn't consume streak-tier boosters yet — the
+  pre-level grant runs on level start; a hook into board setup
+  (Phase 4.5 polish) will materialize them onto the board.
+
+---
+
 ## Phase 3 — Companions + Apothecary Hub
 
 ### Data flow

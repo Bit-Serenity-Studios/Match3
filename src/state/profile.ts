@@ -58,6 +58,8 @@ export interface ProfileState {
 
   spendCoins(amount: number): boolean;
   spendEmbers(amount: number): boolean;
+  spendGems(amount: number): boolean;
+  addCurrency(patch: { coins?: number; gems?: number; embers?: number }): void;
 
   addCompanion(id: string, isNew: boolean, shardsAwarded: number): void;
   equipCompanion(id: string | null): void;
@@ -172,6 +174,19 @@ export const useProfile = create<ProfileState>()(
         set({ embers: s.embers - amount });
         return true;
       },
+      spendGems(amount) {
+        const s = get();
+        if (s.gems < amount) return false;
+        set({ gems: s.gems - amount });
+        return true;
+      },
+      addCurrency(patch) {
+        set((s) => ({
+          coins: s.coins + Math.max(0, patch.coins ?? 0),
+          gems: s.gems + Math.max(0, patch.gems ?? 0),
+          embers: s.embers + Math.max(0, patch.embers ?? 0),
+        }));
+      },
 
       addCompanion(id, isNew, shardsAwarded) {
         set((s) => {
@@ -278,7 +293,7 @@ export const useProfile = create<ProfileState>()(
       },
     }),
     {
-      name: 'moonpetal.profile.v2',
+      name: 'moonpetal.profile.v3',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

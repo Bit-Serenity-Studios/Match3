@@ -27,6 +27,11 @@ import {
   chargeFromEvents,
   passiveDropMultipliers,
 } from '../companions/effects';
+import { useMonetization } from '../state/monetization';
+import { getFlags } from '../state/featureFlags';
+import { ContinueScreen } from './ContinueScreen';
+import { summarizeFail, CONTINUE_EXTRA_MOVES, priceForContinue } from '../monetization/continue';
+import { getMonetization } from '../monetization/singleton';
 
 function buildLevelForPlayer(
   level: LevelDef,
@@ -65,6 +70,26 @@ export function GameScreen() {
   const equippedId = useProfile((s) => s.equippedCompanionId);
   const owned = useProfile((s) => s.ownedCompanions);
   const goToHub = useUI((s) => s.goToHub);
+  const goToStore = useUI((s) => s.goToStore);
+  const continueOpen = useUI((s) => s.continueOpen);
+  const openContinue = useUI((s) => s.openContinue);
+  const closeContinue = useUI((s) => s.closeContinue);
+  const pendingOfferSku = useUI((s) => s.pendingOfferSku);
+  const showOffer = useUI((s) => s.showOffer);
+  const clearOffer = useUI((s) => s.clearOffer);
+  const spendGems = useProfile((s) => s.spendGems);
+  const gems = useProfile((s) => s.gems);
+  const streak = useMonetization((s) => s.streak.count);
+  const streakWin = useMonetization((s) => s.registerStreakWin);
+  const streakLoss = useMonetization((s) => s.registerStreakLossFinal);
+  const dripPiggy = useMonetization((s) => s.dripPiggy);
+  const resetContinueAttempts = useMonetization((s) => s.resetContinueAttempts);
+  const recordContinueUsed = useMonetization((s) => s.recordContinueUsed);
+  const maybeMintOffer = useMonetization((s) => s.maybeMintOffer);
+  const canShowAd = useMonetization((s) => s.canShowAd);
+  const noteAdShown = useMonetization((s) => s.noteAdShown);
+  const applyGrants = useMonetization((s) => s.applyGrants);
+  const progressPassChallenge = useMonetization((s) => s.progressPassChallenge);
 
   const level = useMemo(
     () =>
@@ -116,13 +141,34 @@ export function GameScreen() {
       if (r.next.status !== 'active' && !ended) {
         setEnded(true);
         if (r.next.status === 'won') {
-          registerWin(r.next.levelId, rewardsFor(r.next));
+          const rew = rewardsFor(r.next);
+          registerWin(r.next.levelId, rew);
+          streakWin(r.next.levelId);
+          dripPiggy(r.next.levelId.includes('hard') ? 'hardLevelWin' : 'levelWin');
+          resetContinueAttempts();
+          progressPassChallenge('daily.win3', 1, Date.now());
+          progressPassChallenge('weekly.win15', 1, Date.now());
+          progressPassChallenge('weekly.coins500', rew.coins, Date.now());
+        } else if (getFlags().continueScreen) {
+          openContinue();
         } else {
           registerLoss(r.next.levelId);
+          streakLoss();
         }
       }
     },
-    [state, ended, companion, registerWin, registerLoss],
+    [
+      state,
+      ended,
+      companion,
+      registerWin,
+      streakWin,
+      streakLoss,
+      dripPiggy,
+      resetContinueAttempts,
+      openContinue,
+      progressPassChallenge,
+    ],
   );
 
   const onCastAbility = useCallback(() => {
@@ -143,22 +189,74 @@ export function GameScreen() {
     setEnded(false);
     setFlash(0);
     setCharge(0);
-  }, [tunedLevel, consecutiveFails]);
+    closeContinue();
+  }, [tunedLevel, consecutiveFails, closeContinue]);
 
-  const objectiveLabel = (i: number) => {
-    const o = state.objectives[i];
-    if (!o) return '';
-    switch (o.kind) {
-      case 'collectColor':
-        return `${o.color}`;
-      case 'clearBlockers':
-        return `clear ${o.blocker ?? 'blockers'}`;
-      case 'dropIngredients':
-        return `drop ${o.tile}`;
-      case 'score':
-        return `pts`;
-    }
-  };
+  const onBuyContinue = useCallback(() => {
+    if (state.status !== 'lost') return;
+    const attempts = useMonetization.getState().continueAttemptsThisLevel;
+    const price = priceForContinue(attempts);
+    if (!spendGems(price)) return;
+    recordContinueUsed();
+    setEnded(false);
+    setState({
+      ...state,
+      status: 'active',
+      movesRemaining: state.movesRemaining + CONTINUE_EXTRA_MOVES,
+    });
+    closeContinue();
+  }, [state, spendGems, recordContinueUsed, closeContinue]);
+
+  const onGiveUp = useCallback(() => {
+    registerLoss(state.levelId);
+    streakLoss();
+    const level = tunedLevel;
+    const fails = (consecutiveFails[level.id] ?? 0) + 1;
+    const offer = maybeMintOffer(fails, level.id, level, Date.now());
+    if (offer) showOffer(offer.sku);
+    closeContinue();
+  }, [
+    state.levelId,
+    registerLoss,
+    streakLoss,
+    tunedLevel,
+    consecutiveFails,
+    maybeMintOffer,
+    showOffer,
+    closeContinue,
+  ]);
+
+  const onWatchRescueAd = useCallback(async () => {
+    const now = Date.now();
+    if (!canShowAd('outOfLivesRescue', now)) return;
+    const r = await getMonetization().showRewardedAd('outOfLivesRescue', {});
+    if (!r) return;
+    noteAdShown('outOfLivesRescue', now);
+    applyGrants(r.grants, now);
+  }, [canShowAd, noteAdShown, applyGrants]);
+
+  const objectiveLabel = useCallback(
+    (i: number) => {
+      const o = state.objectives[i];
+      if (!o) return '';
+      switch (o.kind) {
+        case 'collectColor':
+          return `${o.color}`;
+        case 'clearBlockers':
+          return `clear ${o.blocker ?? 'blockers'}`;
+        case 'dropIngredients':
+          return `drop ${o.tile}`;
+        case 'score':
+          return `pts`;
+      }
+    },
+    [state.objectives],
+  );
+
+  const failSummary = useMemo(() => {
+    if (state.status !== 'lost') return null;
+    return summarizeFail(state, objectiveLabel);
+  }, [state, objectiveLabel]);
 
   const isLastLevel = currentLevelIndex >= LEVELS.length - 1;
   const hubUnlocked = highestUnlocked >= UNLOCK_HUB_AT;
@@ -233,17 +331,18 @@ export function GameScreen() {
         </Pressable>
       )}
 
-      {state.status !== 'active' && (
+      {state.status === 'won' && (
         <View style={styles.overlay}>
-          <Text style={typography.h1}>
-            {state.status === 'won' ? '✨ Brewed!' : 'Out of moves'}
-          </Text>
+          <Text style={typography.h1}>✨ Brewed!</Text>
           <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
-            {state.status === 'won'
-              ? 'The moon smiled on your work tonight.'
-              : 'The kettle sighed. Try again?'}
+            The moon smiled on your work tonight.
           </Text>
-          {state.status === 'won' && !isLastLevel ? (
+          {streak >= 3 && (
+            <Text style={[typography.small, { marginTop: spacing.sm, color: palette.candlelight }]}>
+              {streak}-win streak!
+            </Text>
+          )}
+          {!isLastLevel ? (
             <Pressable style={styles.btn} onPress={onNext}>
               <Text style={styles.btnLabel}>
                 {hubUnlocked ? 'Back to Apothecary' : 'Next level'}
@@ -251,9 +350,42 @@ export function GameScreen() {
             </Pressable>
           ) : (
             <Pressable style={styles.btn} onPress={onRetry}>
-              <Text style={styles.btnLabel}>
-                {state.status === 'won' ? 'Play again' : 'Retry'}
-              </Text>
+              <Text style={styles.btnLabel}>Play again</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {state.status === 'lost' && continueOpen && failSummary && (
+        <View style={styles.overlay}>
+          <ContinueScreen
+            summary={failSummary}
+            onContinue={onBuyContinue}
+            onGiveUp={onGiveUp}
+            onWatchAd={onWatchRescueAd}
+            watchAdAllowed={getFlags().rewardedAds && canShowAd('outOfLivesRescue', Date.now())}
+          />
+        </View>
+      )}
+
+      {state.status === 'lost' && !continueOpen && (
+        <View style={styles.overlay}>
+          <Text style={typography.h1}>Out of moves</Text>
+          <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
+            The kettle sighed. Try again?
+          </Text>
+          <Pressable style={styles.btn} onPress={onRetry}>
+            <Text style={styles.btnLabel}>Retry</Text>
+          </Pressable>
+          {pendingOfferSku && (
+            <Pressable
+              style={[styles.btn, { backgroundColor: palette.emerald, marginTop: spacing.sm }]}
+              onPress={() => {
+                goToStore();
+                clearOffer();
+              }}
+            >
+              <Text style={styles.btnLabel}>See offer 🎁</Text>
             </Pressable>
           )}
         </View>
