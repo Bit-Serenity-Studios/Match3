@@ -1,5 +1,107 @@
 # Phase Notes
 
+## Phase 5 — Telemetry + LiveOps hooks
+
+### Module layout (`src/telemetry/`)
+
+```
+types.ts      # discriminated union of every event; compile-time exhaustiveness check
+transport.ts  # Transport interface + Noop / Console / Memory implementations
+queue.ts      # persistent FIFO queue backed by a single AsyncStorage key
+analytics.ts  # public facade: track(), flush(), exportJson(), sessions
+aggregate.ts  # pure aggregators: levelStats, funnel, meanSessionDurationMs
+```
+
+### Event catalogue
+
+Every event carries `ts` + `sessionId`. Fields specific to the type sit on top:
+
+| type | Payload |
+|---|---|
+| `session_start` | appVersion |
+| `session_end` | durationMs |
+| `level_started` | levelId, archetype, attemptNumber, streak, companionId, difficultyMod |
+| `level_finished` | levelId, result, attempts, movesRemained, score, turns, boostersUsed, continuePurchased |
+| `level_failed` | levelId, failMarginPerObjective[] |
+| `store_open` | source: 'hub_tab' \| 'continue_screen' \| 'segmented_offer' |
+| `offer_shown` / `offer_purchased` | skuId, levelId?, priceUsdCents (on purchase) |
+| `ad_requested` / `ad_completed` | placement, rewarded (on completion) |
+| `gacha_pull` | companionId, rarity, isNew, shardsAwarded, pityCounter |
+| `expedition_start` / `expedition_claim` | companionId, duration, rewards on claim |
+
+Adding a new event requires: (1) a variant in `TelemetryEvent`, (2) an entry in `ALL_EVENT_TYPES`. TS enforces the sync via a compile-time check.
+
+### Queue + persistence
+
+- Single AsyncStorage key (`moonpetal.telemetry.queue.v1`)
+- FIFO, bounded to 2000 events. Oldest drops first.
+- Coalesced saves: many `push()`es in a tick share one storage write.
+- `hydrate()` on boot; `snapshot()` for read; `drop(n)` after a successful transport send.
+
+### Transport
+
+- `Transport` interface: `send(events) → { accepted, acceptedCount?, error? }`
+- `NoopTransport` (default) — silently drops. **Only implementation active today.**
+- `ConsoleTransport` — logs each event; use in dev builds.
+- `MemoryTransport` — test-only; captures each batch and can `failOnce()` for retry-path tests.
+
+### Wiring — where every event fires
+
+- **GameScreen**:
+  - `level_started` in the `useEffect` that resets state on level change
+  - `level_finished` (won) when applySwap flips status to won
+  - `level_failed` + `level_finished` (lost, continuePurchased=false) on give-up
+  - `level_finished` (result=lost, continuePurchased=true) on paid continue
+  - `offer_shown` when a segmented offer is created
+- **profile.ts**:
+  - `offer_purchased` in `purchase()` after a successful IAP
+  - `ad_requested` + `ad_completed` in both `showRewardedAd` and `showInterstitial`
+  - `expedition_start` in `startExpedition`
+  - `expedition_claim` in `claimExpedition`
+- **HubScreen**:
+  - `gacha_pull` after each cauldron pull
+  - `store_open` (source=`hub_tab`) when the Store tab is selected
+- **App.tsx**:
+  - `session_start` on mount and on any `background|inactive → active` transition
+  - `session_end` on `active → background|inactive`, followed by `analytics.flush()`
+  - `analytics.newSession(now)` resets sessionId on resume
+
+### Dev dashboard (hidden)
+
+Long-press the subtitle on the hub (`v0.5.0`) for 800ms to open `DevDashboardScreen`. Shows:
+
+- **Funnel**: sessions, mean session duration, level starts/wins/losses, store opens, offers shown/purchased, ads requested/completed, gacha pulls, expedition starts/claims
+- **Per-level APS from real play**: computed by `levelStats(events)`. APS is `starts/wins`; median moves-remaining-on-win; median fail-margin per objective; continue-purchase count. Color-coded against `APS_TARGETS` from `tools/simulator/runner` so the live numbers can be checked against the sim in the same units.
+- **Export JSON**: copies the queue to the native share sheet (trimmed to 20K).
+- **Clear queue**: wipes the persisted log — useful when re-baselining stats.
+
+The dashboard is behind a hidden long-press; no visible entry in normal navigation. In a shipped build a `dev` feature flag should gate the route entirely.
+
+### Tests added (15 new, 165 total)
+
+- Queue: hydrate idempotency, FIFO drop, capacity oldest-first, cross-instance persistence, clear
+- Analytics facade: track+enqueue, flush drops on success, retry on failure, exportJson roundtrip, clear, session rotation
+- Aggregate: eventCounts histogram, levelStats APS + medians + continue count, funnel column mapping, mean session duration
+
+### Tunable knobs added
+
+| Knob | Location |
+|---|---|
+| Queue capacity | `src/telemetry/queue.ts` (`DEFAULT_CAPACITY`) |
+| Long-press duration for dev entry | `HubScreen.tsx` (`delayLongPress`) |
+| APS target bands (dashboard color coding) | reused from `tools/simulator/runner.ts` |
+
+### Known limitations / follow-ups
+
+- Battle-pass challenge tracking is XP-only right now; challenge completion isn't logged as a discrete event. A `challenge_completed` variant would let the dashboard show weekly funnels.
+- The dev dashboard reads from the same in-memory queue that hasn't been flushed to a transport — for a shipped build, we'll want two views: local-queue-view (for QA) and server-side dashboard (for LiveOps).
+- Session end is only reliably fired when the OS suspends the app. If the process is killed, session_end for that session is lost. Acceptable for cohort math; not for exact durations.
+- Long-press to open the dev screen is not currently flag-gated — safe for internal builds; wire an `IS_DEV` flag before ship.
+
+---
+
+
+
 ## Phase 4 — Economy + Monetization (behind feature flags, stub providers)
 
 ### The `MonetizationProvider` seam

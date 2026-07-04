@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Screen = 'game' | 'hub';
+export type Screen = 'game' | 'hub' | 'dev';
 export type HubTab =
   | 'fixtures'
   | 'companions'
@@ -13,6 +13,7 @@ interface UIState {
   hubTab: HubTab;
   goToGame(): void;
   goToHub(tab?: HubTab): void;
+  goToDev(): void;
   setHubTab(t: HubTab): void;
 }
 
@@ -27,5 +28,6 @@ export const useUI = create<UIState>((set) => ({
   goToGame: () => set({ screen: 'game' }),
   goToHub: (tab) =>
     set((s) => ({ screen: 'hub', hubTab: tab ?? s.hubTab })),
+  goToDev: () => set({ screen: 'dev' }),
   setHubTab: (t) => set({ hubTab: t }),
 }));

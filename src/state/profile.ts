@@ -42,6 +42,7 @@ import type { ActiveOffer } from '../monetization/segmentedOffers';
 import { getProvider } from '../monetization/mockProvider';
 import { getSku, DAILY_SUB_GEMS, SUBSCRIPTION_MONTHLY } from '../monetization/catalog';
 import type { AdPlacement, Sku, PurchaseResult, AdResult } from '../monetization/types';
+import { trackEvent } from '../telemetry/analytics';
 
 /**
  * The persistent player profile. Everything here survives app restart via
@@ -368,6 +369,7 @@ export const useProfile = create<ProfileState>()(
           seed: now ^ (companionId.length * 137),
         };
         set({ activeExpeditions: [...s.activeExpeditions, exp] });
+        trackEvent({ type: 'expedition_start', companionId, duration });
         return true;
       },
       claimExpedition(index, now) {
@@ -386,6 +388,15 @@ export const useProfile = create<ProfileState>()(
               ? { ...c, shards: c.shards + r.shards }
               : c,
           ),
+        });
+        trackEvent({
+          type: 'expedition_claim',
+          companionId: exp.companionId,
+          duration: exp.duration,
+          coins: r.coins,
+          embers: r.embers,
+          gems: r.gems,
+          shards: r.shards,
         });
         return { coins: r.coins, embers: r.embers, xp: 0 };
       },
@@ -414,12 +425,18 @@ export const useProfile = create<ProfileState>()(
         const result = await provider.purchase(sku);
         if (!result.ok) return result;
         applyPurchase(sku, set, get);
+        trackEvent({
+          type: 'offer_purchased',
+          skuId: sku.id,
+          priceUsdCents: sku.priceUsdCents,
+        });
         return result;
       },
 
       async showRewardedAd(placement) {
         const now = Date.now();
         const s = get();
+        trackEvent({ type: 'ad_requested', placement });
         if (!canShow(s.adCounters, placement, now)) {
           return { ok: false, placement, rewarded: false, error: 'cap-reached' };
         }
@@ -428,6 +445,11 @@ export const useProfile = create<ProfileState>()(
         if (result.ok && result.rewarded) {
           set({ adCounters: bumpCount(pruneAds(s.adCounters, now), placement, now) });
         }
+        trackEvent({
+          type: 'ad_completed',
+          placement,
+          rewarded: result.rewarded,
+        });
         return result;
       },
       canShowRewardedAd(placement, now) {
@@ -436,6 +458,7 @@ export const useProfile = create<ProfileState>()(
       async showInterstitial(placement) {
         const now = Date.now();
         const s = get();
+        trackEvent({ type: 'ad_requested', placement });
         if (s.hasEverPurchased) {
           return { ok: false, placement, rewarded: false, error: 'purchaser-suppressed' };
         }
@@ -450,6 +473,11 @@ export const useProfile = create<ProfileState>()(
         if (result.ok) {
           set({ adCounters: bumpCount(pruneAds(s.adCounters, now), placement, now) });
         }
+        trackEvent({
+          type: 'ad_completed',
+          placement,
+          rewarded: false,
+        });
         return result;
       },
       canShowInterstitial(placement, now) {

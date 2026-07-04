@@ -21,6 +21,7 @@ import { BattlePassScreen } from './BattlePassScreen';
 import { FEATURE_FLAGS } from '../config/flags';
 import { MAX_LIVES, msUntilNextLife } from '../monetization/lives';
 import { rollMystery } from '../monetization/ads';
+import { trackEvent } from '../telemetry/analytics';
 
 const RARITY_HEX: Record<Rarity, string> = {
   common: '#a8a8b0',
@@ -58,7 +59,14 @@ export function HubScreen() {
       <View style={styles.header}>
         <View>
           <Text style={typography.h1}>Apothecary</Text>
-          <Text style={typography.small}>Between the moon and the kettle.</Text>
+          <Pressable
+            onLongPress={() => useUI.getState().goToDev()}
+            delayLongPress={800}
+          >
+            <Text style={typography.small}>
+              Between the moon and the kettle. · v0.5.0
+            </Text>
+          </Pressable>
         </View>
         <Pressable style={styles.playBtn} onPress={goToGame}>
           <Text style={styles.playLabel}>Play</Text>
@@ -91,7 +99,7 @@ export function HubScreen() {
           locked={!showExpeditions}
         />
         {FEATURE_FLAGS.iapEnabled && (
-          <TabBtn label="Store" active={tab === 'store'} onPress={() => setTab('store')} />
+          <TabBtn label="Store" active={tab === 'store'} onPress={() => { setTab('store'); trackEvent({ type: 'store_open', source: 'hub_tab' }); }} />
         )}
         {FEATURE_FLAGS.battlePassEnabled && (
           <TabBtn label="Pass" active={tab === 'pass'} onPress={() => setTab('pass')} />
@@ -279,6 +287,14 @@ function CompanionsTab() {
     const r = pull(pity, ownedIds);
     addCompanion(r.outcome.companion.id, r.outcome.isNew, r.outcome.shardsAwarded);
     setPity(r.pity);
+    trackEvent({
+      type: 'gacha_pull',
+      companionId: r.outcome.companion.id,
+      rarity: r.outcome.companion.rarity,
+      isNew: r.outcome.isNew,
+      shardsAwarded: r.outcome.shardsAwarded,
+      pityCounter: r.pity.pullsSinceEpicOrBetter,
+    });
     setLastPull({
       name: r.outcome.companion.name,
       rarity: r.outcome.companion.rarity,

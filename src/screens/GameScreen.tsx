@@ -29,6 +29,7 @@ import {
 } from '../companions/effects';
 import { applyStreakBoosters } from '../monetization/streak';
 import { ContinueScreen } from './ContinueScreen';
+import { trackEvent } from '../telemetry/analytics';
 import {
   FAIL_TRIGGER,
   isExpired,
@@ -112,7 +113,17 @@ export function GameScreen() {
     setEnded(false);
     setCharge(0);
     setShowContinue(false);
-  }, [tunedLevel, consecutiveFails, winStreak]);
+    const attemptNumber = (consecutiveFails[tunedLevel.id] ?? 0) + 1;
+    trackEvent({
+      type: 'level_started',
+      levelId: tunedLevel.id,
+      archetype: tunedLevel.archetype,
+      attemptNumber,
+      streak: winStreak,
+      companionId: equippedId,
+      difficultyMod: 0, // difficulty is baked into GameState; approximate as 0
+    });
+  }, [tunedLevel, consecutiveFails, winStreak, equippedId]);
 
   // Expire stale offers.
   useEffect(() => {
@@ -146,6 +157,17 @@ export function GameScreen() {
         setEnded(true);
         registerWin(r.next.levelId, rewardsFor(r.next));
         addBattlePassXp(60); // daily-challenge equivalent per win
+        trackEvent({
+          type: 'level_finished',
+          levelId: r.next.levelId,
+          result: 'won',
+          attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
+          movesRemained: r.next.movesRemaining,
+          score: r.next.score,
+          turns: r.next.turn,
+          boostersUsed: 0,
+          continuePurchased: false,
+        });
       } else if (r.next.status === 'lost') {
         // Show continue screen instead of ending immediately.
         setShowContinue(true);
@@ -181,16 +203,54 @@ export function GameScreen() {
     setShowContinue(false);
   }, [tunedLevel, consecutiveFails, winStreak]);
 
-  const onContinuePurchase = useCallback((extraMoves: number) => {
-    setShowContinue(false);
-    setState((s) => ({ ...s, movesRemaining: s.movesRemaining + extraMoves, status: 'active' }));
-  }, []);
+  const onContinuePurchase = useCallback(
+    (extraMoves: number) => {
+      setShowContinue(false);
+      setState((s) => ({
+        ...s,
+        movesRemaining: s.movesRemaining + extraMoves,
+        status: 'active',
+      }));
+      trackEvent({
+        type: 'level_finished',
+        levelId: state.levelId,
+        result: 'lost', // technically continued — captured as continuePurchased
+        attempts: (consecutiveFails[state.levelId] ?? 0) + 1,
+        movesRemained: 0,
+        score: state.score,
+        turns: state.turn,
+        boostersUsed: extraMoves,
+        continuePurchased: true,
+      });
+    },
+    [state, consecutiveFails],
+  );
 
   const onGiveUp = useCallback(() => {
     setShowContinue(false);
     if (ended) return;
     setEnded(true);
     registerLoss(state.levelId);
+    // Emit fail telemetry with per-objective margins.
+    const margins = state.progress.map((p) =>
+      p.done ? 0 : Math.max(0, p.target - p.progress) / Math.max(1, p.target),
+    );
+    trackEvent({
+      type: 'level_failed',
+      levelId: state.levelId,
+      failMarginPerObjective: margins,
+    });
+    trackEvent({
+      type: 'level_finished',
+      levelId: state.levelId,
+      result: 'lost',
+      attempts: (consecutiveFails[state.levelId] ?? 0) + 1,
+      movesRemained: 0,
+      score: state.score,
+      turns: state.turn,
+      boostersUsed: 0,
+      continuePurchased: false,
+    });
     // Segmented offer trigger.
     if (
       FEATURE_FLAGS.segmentedOffersEnabled &&
@@ -199,6 +259,11 @@ export function GameScreen() {
       const failsNow = (consecutiveFails[state.levelId] ?? 0) + 1;
       if (shouldTrigger(state.levelId, failsNow, false)) {
         setOffer(offerFor(level, Date.now()));
+        trackEvent({
+          type: 'offer_shown',
+          skuId: `bundle-offer-${state.levelId}`,
+          levelId: state.levelId,
+        });
       }
     }
   }, [ended, state.levelId, registerLoss, activeOffer, consecutiveFails, level, setOffer]);
