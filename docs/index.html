@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100820">
+<meta name="description" content="Live playable web preview of Moonpetal Apothecary — a cozy match-3 by Bit Serenity Studios.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<title>Moonpetal Apothecary — Live Preview</title>
+</head>
+<body>
+
+<style>
+  :root {
+    /* wrapper (adaptive) */
+    --page: #0a0612;
+    --page-2: #120a1e;
+    --ink: #efe4c9;
+    --ink-dim: #b9ab86;
+    --ink-faint: #7d7264;
+    --rule: #2a2036;
+    --card: #150d22;
+    /* brand (fixed both themes) */
+    --candle: #e6b25a;
+    --candle-soft: #c98a37;
+    --emerald: #4fae7c;
+    --purple: #9a78e0;
+    /* phone (always the app's dark world) */
+    --bg-deep: #100820;
+    --bg-surface: #1a0f24;
+    --bg-surface-2: #251a34;
+    --parch: #efe4c9;
+    --parch-dim: #c9bd9a;
+    --border: #3a2a4a;
+    /* tiles */
+    --t-moonpetal: #c9a4ff;
+    --t-vial: #7be3a8;
+    --t-runestone: #8fb8ff;
+    --t-resin: #f2b968;
+    --t-mushroom: #e97e7e;
+
+    --maxw: 1180px;
+    --shadow: 0 30px 80px -20px rgba(0,0,0,.7);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --page: #efe7d6;
+      --page-2: #e6dcc6;
+      --ink: #2a2118;
+      --ink-dim: #5f5443;
+      --ink-faint: #8a7e69;
+      --rule: #d6c9ad;
+      --card: #f7f1e3;
+      --shadow: 0 30px 70px -24px rgba(60,40,20,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0a0612; --page-2: #120a1e; --ink: #efe4c9; --ink-dim: #b9ab86;
+    --ink-faint: #7d7264; --rule: #2a2036; --card: #150d22;
+    --shadow: 0 30px 80px -20px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"] {
+    --page: #efe7d6; --page-2: #e6dcc6; --ink: #2a2118; --ink-dim: #5f5443;
+    --ink-faint: #8a7e69; --rule: #d6c9ad; --card: #f7f1e3;
+    --shadow: 0 30px 70px -24px rgba(60,40,20,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+
+  .wrap {
+    min-height: 100vh;
+    background:
+      radial-gradient(120% 80% at 50% -10%, var(--page-2), var(--page) 60%);
+    color: var(--ink);
+    font-family: Georgia, 'Iowan Old Style', 'Times New Roman', ui-serif, serif;
+    padding: clamp(20px, 4vw, 56px) clamp(16px, 4vw, 40px) 72px;
+    display: flex;
+    justify-content: center;
+  }
+  .shell {
+    width: 100%;
+    max-width: var(--maxw);
+  }
+
+  /* ── masthead ── */
+  .masthead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .brand-eyebrow {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--candle-soft);
+    margin: 0 0 10px;
+  }
+  h1.title {
+    font-size: clamp(30px, 5.5vw, 54px);
+    line-height: .98;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  h1.title .amp { color: var(--candle); font-style: italic; }
+  .subtitle {
+    margin: 12px 0 0;
+    font-size: clamp(14px, 1.6vw, 17px);
+    color: var(--ink-dim);
+    max-width: 44ch;
+    font-style: italic;
+  }
+  .build-badge {
+    text-align: right;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+  .build-badge b { color: var(--candle); font-weight: 600; }
+  .theme-btn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-dim);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .theme-btn:hover { border-color: var(--candle-soft); color: var(--candle); }
+  .theme-btn:focus-visible { outline: 2px solid var(--candle); outline-offset: 2px; }
+
+  /* ── main grid ── */
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: clamp(24px, 4vw, 56px);
+    align-items: start;
+    margin-top: 36px;
+  }
+  @media (max-width: 900px) {
+    .stage { grid-template-columns: 1fr; }
+    .ledger { order: 2; }
+    .phone-col { order: 1; }
+  }
+
+  .phone-col { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+  .device-hint {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  /* ── phone frame ── */
+  .phone {
+    width: 360px;
+    max-width: 92vw;
+    aspect-ratio: 360 / 740;
+    background: #000;
+    border-radius: 42px;
+    padding: 10px;
+    box-shadow:
+      var(--shadow),
+      0 0 0 2px rgba(230,178,90,.18),
+      0 0 60px -10px rgba(230,178,90,.25);
+    position: relative;
+  }
+  .phone::after {
+    content: "";
+    position: absolute;
+    top: 20px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: #000;
+    border-radius: 0 0 16px 16px;
+    z-index: 40;
+  }
+  .screen {
+    width: 100%; height: 100%;
+    border-radius: 33px;
+    overflow: hidden;
+    background: var(--bg-deep);
+    position: relative;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color: var(--parch);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* screen: top hud */
+  .hud {
+    display: flex; align-items: center; gap: 5px;
+    padding: 34px 10px 8px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .hud .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--bg-surface-2);
+    border: 2px solid var(--candle-soft);
+    display: grid; place-items: center;
+    font-size: 15px; position: relative; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .hud .avatar .lvl {
+    position: absolute; right: -4px; bottom: -4px;
+    min-width: 16px; height: 16px; padding: 0 3px;
+    background: var(--candle); color: var(--bg-deep);
+    border-radius: 8px; font-size: 9px; font-weight: 800;
+    display: grid; place-items: center;
+  }
+  .hud .chip {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 3px;
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 7px;
+    font-size: 11px; font-weight: 700;
+  }
+  .hud .chip .g { font-size: 12px; }
+  .hud .burger {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--bg-surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-size: 17px; cursor: pointer;
+    flex-shrink: 0; color: var(--parch);
+  }
+
+  .body { flex: 1; overflow: hidden; position: relative; }
+  .view { position: absolute; inset: 0; overflow-y: auto; }
+  .view::-webkit-scrollbar { width: 0; }
+
+  /* bottom nav */
+  .nav {
+    display: flex; background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0; padding: 4px 2px 8px;
+  }
+  .nav button {
+    flex: 1; background: transparent; border: 0;
+    color: var(--parch-dim); font-family: inherit;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px; padding: 6px 0; border-radius: 10px; cursor: pointer;
+    font-size: 9px; font-weight: 600;
+  }
+  .nav button .ng { font-size: 19px; }
+  .nav button.on {
+    background: var(--candle); color: var(--bg-deep);
+    margin-top: -8px; padding-top: 12px; font-weight: 800;
+  }
+
+  /* ── home view ── */
+  .home { padding: 12px; }
+  .unlock {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px; margin-bottom: 14px;
+  }
+  .unlock .row { display: flex; align-items: center; gap: 8px; }
+  .unlock .trophy { font-size: 20px; }
+  .unlock .track {
+    flex: 1; height: 22px; background: var(--bg-surface-2);
+    border-radius: 11px; overflow: hidden; position: relative;
+    display: grid; place-items: center;
+  }
+  .unlock .fill { position: absolute; inset: 0 auto 0 0; background: var(--candle); }
+  .unlock .track span { position: relative; font-size: 11px; font-weight: 800; color: var(--bg-deep); }
+  .unlock .reward {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--bg-surface-2); border: 2px solid var(--candle);
+    display: grid; place-items: center; font-size: 19px;
+  }
+  .unlock .cap { font-size: 11px; color: var(--parch-dim); text-align: center; margin-top: 6px; }
+
+  .stagebox { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .minis { width: 82px; display: flex; flex-direction: column; gap: 8px; }
+  .mini {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 4px; text-align: center; cursor: pointer;
+  }
+  .mini .mg { font-size: 24px; }
+  .mini .ml { font-size: 10px; font-weight: 700; margin-top: 3px; line-height: 1.2; }
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .crest {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: var(--bg-surface); border: 3px solid var(--candle-soft);
+    display: grid; place-items: center; font-size: 46px; margin-bottom: 10px;
+    box-shadow: 0 0 26px -6px rgba(230,178,90,.5);
+  }
+  .center h2 { margin: 0; font-size: 17px; }
+  .center .sub { font-size: 11px; color: var(--parch-dim); margin: 2px 0 14px; }
+  .play {
+    background: var(--candle); color: var(--bg-deep);
+    border: 3px solid var(--candle-soft);
+    font-weight: 900; font-size: 22px; letter-spacing: 2px;
+    padding: 12px 42px; border-radius: 999px; cursor: pointer;
+    font-family: inherit;
+    animation: pulse 1.8s ease-in-out infinite;
+    box-shadow: 0 6px 18px -4px rgba(230,178,90,.5);
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @media (prefers-reduced-motion: reduce) { .play { animation: none; } }
+  .online {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-surface); border: 2px solid var(--purple);
+    border-radius: 16px; padding: 12px; cursor: pointer;
+  }
+  .online .oi {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--bg-surface-2);
+    display: grid; place-items: center; font-size: 21px;
+  }
+  .online .ot { font-weight: 700; font-size: 15px; }
+  .online .os { font-size: 11px; color: var(--parch-dim); margin-top: 1px; }
+  .online .beta {
+    background: var(--purple); color: #fff; font-size: 9px; font-weight: 800;
+    padding: 3px 8px; border-radius: 999px;
+  }
+
+  /* ── game view ── */
+  .game { display: flex; flex-direction: column; height: 100%; padding: 10px; }
+  .gtop {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+  }
+  .gtitle { font-size: 12px; color: var(--parch-dim); }
+  .gtitle b { color: var(--parch); font-size: 15px; display: block; }
+  .home-btn {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    color: var(--parch); border-radius: 999px; padding: 6px 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .stats { display: flex; gap: 6px; margin-bottom: 10px; }
+  .stat {
+    flex: 1; background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 7px; text-align: center;
+  }
+  .stat .sl { font-size: 10px; color: var(--parch-dim); }
+  .stat .sv { font-size: 19px; font-weight: 800; color: var(--candle); font-variant-numeric: tabular-nums; }
+  .stat.obj { flex: 1.6; }
+  .stat.obj .sv { font-size: 14px; color: var(--parch); }
+
+  .board-wrap { display: grid; place-items: center; flex: 1; }
+  .board {
+    position: relative;
+    background: var(--bg-surface-2);
+    border-radius: 12px;
+    touch-action: none;
+  }
+  .tile {
+    position: absolute;
+    display: grid; place-items: center;
+    border-radius: 8px;
+    transition: transform .3s cubic-bezier(.34,1.3,.64,1), opacity .18s;
+    will-change: transform;
+  }
+  .tile .tbg {
+    position: absolute; inset: 4px; border-radius: 6px; opacity: .32;
+  }
+  .tile svg { width: 76%; height: 76%; position: relative; z-index: 2; }
+  .tile.sel { box-shadow: inset 0 0 0 3px var(--candle); border-radius: 8px; }
+  .tile.pop { animation: pop .22s ease forwards; }
+  @keyframes pop { to { transform: var(--rest) scale(.1); opacity: 0; } }
+  .tile.wob { animation: wob .28s ease; }
+  @keyframes wob {
+    0%,100% { transform: var(--rest); }
+    25% { transform: var(--rest) translateX(-5px); }
+    75% { transform: var(--rest) translateX(5px); }
+  }
+  .reduce .tile { transition: none; }
+
+  .toast {
+    position: absolute; left: 50%; top: 40%;
+    transform: translate(-50%,-50%);
+    background: rgba(230,178,90,.78); color: var(--bg-deep);
+    border: 1px solid rgba(255,255,255,.35);
+    font-weight: 900; font-size: 18px;
+    padding: 8px 20px; border-radius: 999px;
+    pointer-events: none; opacity: 0; z-index: 30;
+    box-shadow: 0 0 20px rgba(230,178,90,.5);
+  }
+  .toast.show { animation: toast 1.2s ease forwards; }
+  @keyframes toast {
+    0% { opacity: 0; transform: translate(-50%,-40%) scale(.8); }
+    18% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    82% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%,-58%) scale(1); }
+  }
+
+  .overlay {
+    position: absolute; inset: 0; background: rgba(16,8,32,.82);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 { font-size: 26px; margin: 0 0 6px; }
+  .overlay p { color: var(--parch-dim); font-size: 13px; margin: 0 0 20px; max-width: 24ch; }
+  .overlay button {
+    background: var(--candle); color: var(--bg-deep); border: 0;
+    font-weight: 800; font-size: 15px; padding: 11px 30px; border-radius: 999px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* ── generic list view (store/profile) ── */
+  .simple { padding: 14px; }
+  .simple h2 { margin: 4px 0 3px; font-size: 20px; }
+  .simple .lead { color: var(--parch-dim); font-size: 12px; margin: 0 0 16px; }
+  .sec-h { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--parch-dim); margin: 16px 0 8px; }
+  .prod {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px; margin-bottom: 8px;
+  }
+  .prod.best { border-color: var(--emerald); }
+  .prod .pi { width: 40px; height: 40px; border-radius: 9px; background: var(--bg-surface-2); display: grid; place-items: center; font-size: 20px; }
+  .prod .pt { font-weight: 700; font-size: 14px; }
+  .prod .ps { font-size: 11px; color: var(--parch-dim); margin-top: 1px; }
+  .prod .price { margin-left: auto; color: var(--candle); font-weight: 800; font-size: 15px; }
+  .wallet-row { display: flex; gap: 6px; margin-bottom: 4px; }
+  .wtile { flex: 1; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 4px; text-align: center; }
+  .wtile .wg { font-size: 20px; }
+  .wtile .wv { font-weight: 800; font-size: 15px; margin-top: 2px; }
+  .wtile .wl { font-size: 9px; color: var(--parch-dim); }
+
+  /* ── ledger ── */
+  .ledger { }
+  .ledger h3 {
+    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 0 0 4px;
+    font-family: ui-monospace, Menlo, monospace; font-weight: 600;
+  }
+  .ledger .lead {
+    font-size: 15px; color: var(--ink-dim); margin: 0 0 24px; line-height: 1.55;
+    max-width: 46ch;
+  }
+  .feat {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .feat:last-child { border-bottom: 1px solid var(--rule); }
+  .feat .fdot {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px;
+    background: color-mix(in srgb, var(--emerald) 20%, transparent);
+    color: var(--emerald);
+    border: 1px solid color-mix(in srgb, var(--emerald) 40%, transparent);
+  }
+  .feat.wip .fdot {
+    background: color-mix(in srgb, var(--candle) 18%, transparent);
+    color: var(--candle-soft);
+    border-color: color-mix(in srgb, var(--candle) 40%, transparent);
+  }
+  .feat .fh {
+    font-family: Georgia, ui-serif, serif;
+    font-size: 17px; font-weight: 700; color: var(--ink); margin: 0 0 3px;
+  }
+  .feat .fp { font-size: 13.5px; color: var(--ink-dim); margin: 0; line-height: 1.5;
+    font-family: system-ui, sans-serif; }
+  .feat .ph {
+    font-family: ui-monospace, Menlo, monospace; font-size: 10px;
+    color: var(--ink-faint); letter-spacing: .1em; text-transform: uppercase;
+    margin-left: auto; flex-shrink: 0; padding-top: 3px;
+  }
+  .ledger .foot {
+    margin-top: 24px; font-size: 12px; color: var(--ink-faint);
+    font-family: ui-monospace, Menlo, monospace; line-height: 1.7;
+  }
+  .ledger .foot b { color: var(--candle-soft); }
+
+  .credit { text-align: center; margin-top: 56px; font-size: 12px; color: var(--ink-faint); }
+</style>
+
+<div class="wrap">
+  <div class="shell">
+    <header class="masthead">
+      <div>
+        <p class="brand-eyebrow">Bit Serenity Studios · Build Preview</p>
+        <h1 class="title">Moonpetal <span class="amp">Apothecary</span></h1>
+        <p class="subtitle">A cozy match-3 brewed between the moon and the kettle. This is a live, playable preview of the current build — tap PLAY.</p>
+      </div>
+      <div class="build-badge">
+        <div>ver <b>0.5.0</b> · SDK 54</div>
+        <div>branch <b>phase-4-economy</b></div>
+        <button class="theme-btn" id="themeBtn">◐ theme</button>
+      </div>
+    </header>
+
+    <div class="stage">
+      <div class="ledger">
+        <h3>What's in this build</h3>
+        <p class="lead">The preview mirrors the real app's engine, art, and screens. Here's what's shipped on the branch and what's still brewing.</p>
+
+        <div class="feat">
+          <div class="fdot">✓</div>
+          <div>
+            <p class="fh">Deterministic match-3 engine</p>
+            <p class="fp">Pure-TS seeded RNG, cascades, gravity, 60 hand-tuned levels plus endless generation past level 60.</p>
+          </div>
+          <span class="ph">core</span>
+        </div>
+        <div class="feat">
+          <div class="fdot">✓</div>
+          <div>
+            <p class="fh">Fluent-emoji board art + fall-in</p>
+            <p class="fp">Real MIT/Apache-licensed tile icons rendered on Skia, with the new drop-in animation for refilled tiles.</p>
+          </div>
+          <span class="ph">visual</span>
+        </div>
+        <div class="feat">
+          <div class="fdot">✓</div>
+          <div>
+            <p class="fh">Home hub + bottom nav shell</p>
+            <p class="fp">Big PLAY button, next-unlock ledger, profile, header dropdown, and the five-tab nav — no more menu hop.</p>
+          </div>
+          <span class="ph">shell</span>
+        </div>
+        <div class="feat">
+          <div class="fdot">✓</div>
+          <div>
+            <p class="fh">Economy, store &amp; battle pass</p>
+            <p class="fp">Stars &amp; coins, decoy-anchored gem store, piggy bank, streaks, continue screen, 14-day mini-pass.</p>
+          </div>
+          <span class="ph">phase 4</span>
+        </div>
+        <div class="feat">
+          <div class="fdot">✓</div>
+          <div>
+            <p class="fh">Audio + accessibility</p>
+            <p class="fp">10 ambient tracks, softened SFX, reduce-motion, larger text/targets, high contrast, colorblind modes.</p>
+          </div>
+          <span class="ph">a11y</span>
+        </div>
+        <div class="feat wip">
+          <div class="fdot">◔</div>
+          <div>
+            <p class="fh">Moonrise Duel — online 1v1</p>
+            <p class="fp">Competitive shell, moonstone rank, and unlock gates are in; matchmaking backend is the next milestone.</p>
+          </div>
+          <span class="ph">brewing</span>
+        </div>
+        <div class="feat wip">
+          <div class="fdot">◔</div>
+          <div>
+            <p class="fh">Covens &amp; Grimoire</p>
+            <p class="fp">Guild teams and the collectible recipe book are scaffolded behind rank gates, awaiting live data.</p>
+          </div>
+          <span class="ph">brewing</span>
+        </div>
+
+        <p class="foot">
+          Served from the repo via <b>GitHub Pages</b> — updates on every push to the branch.<br>
+          Preview parity: engine logic, palette, tile art, and screen flow match the device build.<br>
+          Not yet in preview: IAP, ads, cloud sync, real audio playback.
+        </p>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone">
+          <div class="screen" id="screen">
+            <div class="hud">
+              <div class="avatar" data-nav="profile">🌙<span class="lvl" id="hudLvl">1</span></div>
+              <div class="chip"><span class="g">🏵️</span><span id="hudStones">0</span></div>
+              <div class="chip"><span class="g">🪙</span><span id="hudCoins">120</span></div>
+              <div class="chip"><span class="g">⭐</span><span id="hudStars">0</span></div>
+              <div class="burger" id="burger">≡</div>
+            </div>
+
+            <div class="body" id="bodyRoot"><!-- views injected --></div>
+
+            <div class="nav" id="nav">
+              <button data-nav="store"><span class="ng">🏪</span>Market</button>
+              <button data-nav="covens"><span class="ng">🐾</span>Covens</button>
+              <button data-nav="home" class="on"><span class="ng">🏠</span>Cauldron</button>
+              <button data-nav="moonrise"><span class="ng">📅</span>Moonrise</button>
+              <button data-nav="grimoire"><span class="ng">📖</span>Grimoire</button>
+            </div>
+          </div>
+        </div>
+        <p class="device-hint">Fully playable · swipe tiles to match</p>
+      </div>
+    </div>
+
+    <p class="credit">Moonpetal Apothecary — Bit Serenity Studios · preview generated from the live build</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── inlined Fluent Emoji tile art (MIT) ───────────────────────────────
+  const SVG = {
+    moonpetal: '<svg viewBox="0 0 32 32"><g fill="none"><path fill="#FF6DC6" d="M26.23 19.766c2.47-.8 3.96-3.19 3.76-5.68a.53.53 0 0 0-.43-.47s-.89-.19-1.09-.23c-.1-.02-.14-.15-.08-.22c.13-.14.75-.84.75-.84c.16-.17.19-.44.07-.64c-1.29-2.13-3.9-3.19-6.38-2.38c-.71.23-1.33.65-1.87 1.18c.34-.68.54-1.39.54-2.14c0-2.6-1.81-4.76-4.24-5.33a.56.56 0 0 0-.59.26s-.46.79-.56.97c-.05.09-.19.08-.23.01c-.1-.17-.56-.98-.56-.98c-.12-.2-.36-.32-.58-.26c-2.42.56-4.24 2.72-4.24 5.32c0 .75.21 1.46.54 2.14c-.54-.53-1.15-.94-1.86-1.17c-2.48-.81-5.09.25-6.38 2.38c-.12.2-.09.46.07.64c0 0 .61.68.75.83c.07.07.02.21-.07.23l-1.1.23c-.23.05-.41.24-.43.47a5.48 5.48 0 0 0 3.76 5.68c.72.23 1.46.26 2.22.14c-.68.35-1.28.81-1.72 1.42c-1.53 2.1-1.33 4.91.3 6.8c.15.18.41.23.63.13c0 0 .83-.37 1.02-.46c.09-.04.2.04.19.13l-.12 1.12c-.02.23.1.47.32.56c2.3.96 5.03.28 6.56-1.82c.44-.61.69-1.3.82-2.05c.13.75.38 1.45.82 2.05c1.53 2.1 4.26 2.78 6.56 1.82c.22-.09.34-.32.32-.56c0 0-.1-.91-.12-1.11c-.01-.1.1-.18.19-.14l1.03.46c.21.1.48.05.63-.13c1.63-1.89 1.83-4.7.3-6.8c-.44-.61-1.04-1.06-1.72-1.42c.76.12 1.5.09 2.22-.14"/><path fill="#fff" d="M16.51 13.252a1 1 0 1 0-1 0v1.284a2.47 2.47 0 0 0-1.648 1.198l-1.224-.397a1 1 0 1 0-.309.951l1.225.397q-.014.134-.014.27c0 .64.243 1.224.643 1.663l-.758 1.043a1 1 0 1 0 .809.588l.757-1.043a2.46 2.46 0 0 0 2.033.002l.752 1.04a1 1 0 1 0 .81-.587l-.753-1.04a2.46 2.46 0 0 0 .632-1.937l1.215-.395a1 1 0 1 0-.31-.951l-1.214.394a2.47 2.47 0 0 0-1.646-1.196z"/></g></svg>',
+    vial: '<svg viewBox="0 0 32 32"><g fill="none"><path fill="#C3EF3C" d="M12.314 12.757L20.5 11l5.249 2.465l-14.142 14.142a5 5 0 0 1-7.072-7.071l1.057-1.057l1.057.087v-1.144l3.197-3.197l1.049-.03v-1.019z"/><path fill="#AEDDFF" d="M21.86 2.504a1.5 1.5 0 1 0-2.122 2.122l.354.353l-4.975 4.975L15.5 11l-1.396-.033l-1.79 1.79l13.435.707l1.414-1.414l.354.354a1.5 1.5 0 1 0 2.12-2.121z"/><path fill="#008463" d="m15.142 9.929l2.298 2.298a.75.75 0 1 1-1.06 1.06l-2.3-2.297zM10.9 14.172l2.297 2.298a.75.75 0 0 1-1.06 1.06l-2.298-2.298zm-1.945 6.54l-2.298-2.298l-1.06 1.06l2.297 2.299a.75.75 0 0 0 1.061-1.06"/></g></svg>',
+    runestone: '<svg viewBox="0 0 32 32"><g fill="none"><path fill="#9B9B9B" d="m10.38 29.104l12.9.99a3.4 3.4 0 0 0 2.74-1.38l3.18-4.3c.56-.77.78-1.74.59-2.67l-.505-2.563l-1.165-.837l-.335-2.7l.696-.543l-.031-.157c-.16-.82-.61-1.55-1.28-2.05l-3.79-3.37l-2.38-4.4l-2.9-.16l-5.06-1.84l-6.66 7.04l-1.61 3.61l-.26.58l-1.66 3.07c-.17.3.02 3.08-.04 3.42c0 0 6.95 8.26 7.57 8.26"/><path fill="#E6E6E6" d="m20 10.104l-4.05 11.14l9.71 2.7l3.63-4.77l-.81-4.07z"/><path fill="#636363" d="M2.51 18.394L2 22.104h3l.79-3.13c.13-.56.48-1.03.97-1.33l4.24-2.54l-3.05-6.66l-1.38 1.51c-.13.14-.23.3-.31.48l-1.75 3.93l-1.66 3.07c-.17.3-.28.62-.34.96"/><path fill="#D3D3D3" d="m11.51 20.614l4.49 4.49l9.66-1.16l-7.48-3.4c-.66-.3-1-1.05-.79-1.75l2.61-8.69l1-4.98c-.84-1.34-1.23-1.72-2.67-2.19c-.96-.34-1.79-.63-1.79-.63s-.54-.23-1.12-.29c-.73-.06-1.2.07-1.82.54L11 15.104v4.28c0 .46.18.9.51 1.23"/><path fill="#636363" d="M2 22.104h3l11 3v4.99l-4.25.01c-1.15 0-2.28-.26-3.31-.78l-1.37-.68a7.2 7.2 0 0 1-1.91-1.38l-.93-.93a7.3 7.3 0 0 1-1.78-2.88z"/><path fill="#9B9B9B" d="M29.98 22.914c.12.66-.06 1.34-.51 1.85l-3.97 4.52c-.41.47-1.17.81-1.79.82H16v-5l9.66-1.16l3.62-4.77zM17.51 4.434l-1.11-1.57a1.883 1.883 0 0 0-2.89-.22l-6.76 7.04c-.65.68-.53 1.79.25 2.31l4 3.11l4.63-4.21c.55-.5.95-1.14 1.16-1.86l.95-3.25c.13-.46.05-.96-.23-1.35"/></g></svg>',
+    resin: '<svg viewBox="0 0 32 32"><g fill="none"><path fill="#D3883E" d="M6 8a1 1 0 0 1 1-1h2.05l.048.047H22.93L22.988 7H25a1 1 0 1 1 0 2l-9 2l-9-2a1 1 0 0 1-1-1"/><path fill="#B97028" d="M4 16c-1-4.5 2-7 4-7l.059-.04H23.91L24 9c2 0 5 2.5 4 7l-.288 1l-.087.055l-11.627 4l-11.627-4L4.288 17zm2.452 8.5L7.75 29S8 30 9 30h14c1 0 1.25-1 1.25-1l1.298-4.5l-.167-.113l-9.398-3l-9.398 3z"/><path fill="#8C5543" d="M27.712 17H4.288l2.164 7.5h19.096z"/><path fill="#6D4534" d="M19.683 3.273a.75.75 0 0 1 .544.91l-.998 3.96a.75.75 0 1 1-1.454-.367l.998-3.96a.75.75 0 0 1 .91-.543"/><path fill="#8C5543" d="M21.5 4.002a2 2 0 1 1-4 0a2 2 0 0 1 4 0"/><path fill="#F9C23C" d="M9.047 7c1.04 6.128 4.452 5.73 4.452 5.73c2.321 0 2.776-1.122 3.206-2.18c.127-.313.252-.62.422-.892c.657-.986 1.77-.265 2.022 0c.645.695 1.353.569 1.353.569c1.61-.033 2.332-2.603 2.484-3.227zm12.599 5.632s-.355-.987-1.408-.96c-.222.019-.919.253-.815 1.315c.038.43.136 1.695 1.741 1.287c.638-.162.772-.879.482-1.642"/></g></svg>',
+    mushroom: '<svg viewBox="0 0 32 32"><g fill="none"><path fill="#FFCE7C" d="M10.992 25.309L13.5 18.5H18l2.831 6.724A2 2 0 0 1 18.988 28h-6.12a2 2 0 0 1-1.876-2.691"/><path fill="#F8312F" d="M4 16c0-2.27.63-4.394 1.727-6.205L9.5 8l3.258-3.557A12 12 0 0 1 16 4c1.626 0 3.176.323 4.59.91l2.91 5.59l4.455 4.456Q28 15.472 28 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path fill="#FBB8AB" d="M12.79 4.434q.079.436.08.896c0 2.74-2.23 4.96-4.97 4.97a4.9 4.9 0 0 1-2.173-.506a12.03 12.03 0 0 1 7.062-5.36m7.784.468A6.6 6.6 0 0 0 19.43 8.63a6.632 6.632 0 0 0 8.528 6.353c-.384-4.567-3.324-8.406-7.385-10.081M14.94 17.04a2.74 2.74 0 1 0 0-5.48a2.74 2.74 0 0 0 0 5.48"/></g></svg>'
+  };
+  const COLORS = ["moonpetal", "vial", "runestone", "resin", "mushroom"];
+  const TINT = {
+    moonpetal: "#c9a4ff", vial: "#7be3a8", runestone: "#8fb8ff",
+    resin: "#f2b968", mushroom: "#e97e7e"
+  };
+
+  // ── seeded RNG (mulberry32) — mirrors the engine's determinism ─────────
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const W = 6, H = 7;
+  const CELL = 46, GAP = 0;
+
+  const app = {
+    screen: "home",
+    level: 1,
+    coins: 120, stones: 0, stars: 0,
+    // per-game
+    moves: 0, target: 0, targetColor: "moonpetal", collected: 0,
+    grid: null, rng: null, nextId: 1, busy: false, sel: null,
+    reduce: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  };
+
+  const bodyRoot = document.getElementById("bodyRoot");
+
+  // ── view router ────────────────────────────────────────────────────────
+  function setNav(screen) {
+    document.querySelectorAll("#nav button").forEach(b => {
+      b.classList.toggle("on", b.dataset.nav === screen);
+    });
+  }
+
+  function render() {
+    if (app.screen === "home") return renderHome();
+    if (app.screen === "game") return renderGame();
+    if (app.screen === "store") return renderStore();
+    if (app.screen === "profile") return renderProfile();
+    return renderSoon(app.screen);
+  }
+
+  function syncHud() {
+    document.getElementById("hudStones").textContent = app.stones;
+    document.getElementById("hudCoins").textContent = app.coins;
+    document.getElementById("hudStars").textContent = app.stars;
+    document.getElementById("hudLvl").textContent = Math.max(1, Math.floor((app.level - 1)) + 1);
+  }
+
+  // ── HOME ────────────────────────────────────────────────────────────────
+  const MILESTONES = [
+    [3, "Apothecary Hub", "🏛️"], [6, "Companions", "🐾"], [9, "Expeditions", "🗺️"],
+    [15, "Battle Pass", "⭐"], [20, "Advanced Recipes", "🧪"], [30, "Legendary Companions", "👑"],
+    [45, "Master Apothecary", "🏆"], [60, "Grand Cauldron", "🎃"]
+  ];
+  function renderHome() {
+    setNav("home");
+    const cleared = app.level - 1;
+    let next = MILESTONES.find(m => cleared < m[0]) || MILESTONES[MILESTONES.length - 1];
+    let prevAt = 0;
+    for (const m of MILESTONES) { if (m[0] <= cleared) prevAt = m[0]; }
+    const pct = Math.max(0, Math.min(1, (cleared - prevAt) / (next[0] - prevAt)));
+    const remain = Math.max(0, next[0] - cleared);
+    bodyRoot.innerHTML = `
+      <div class="view home">
+        <div class="unlock">
+          <div class="row">
+            <span class="trophy">🏆</span>
+            <div class="track"><div class="fill" style="width:${pct * 100}%"></div><span>${cleared} / ${next[0]}</span></div>
+            <div class="reward">${next[2]}</div>
+          </div>
+          <div class="cap">${remain > 0 ? `Win ${remain} more level${remain === 1 ? "" : "s"} — ${next[1]}` : `${next[1]} unlocked!`}</div>
+        </div>
+        <div class="stagebox">
+          <div class="minis">
+            <div class="mini" data-act="tutorial"><div class="mg">📜</div><div class="ml">Learn the<br>Basics</div></div>
+            <div class="mini" data-act="daily"><div class="mg">🎁</div><div class="ml">Daily<br>Rewards</div></div>
+          </div>
+          <div class="center">
+            <div class="crest">🌙</div>
+            <h2>${cleared === 0 ? "Ready to begin?" : "Level " + app.level}</h2>
+            <div class="sub">Solo Journey</div>
+            <button class="play" data-act="play">PLAY</button>
+          </div>
+        </div>
+        <div class="online" data-nav="moonrise">
+          <div class="oi">⚔️</div>
+          <div style="flex:1">
+            <div class="ot">Moonrise Duel</div>
+            <div class="os">Compete for moonstones · 1v1 online</div>
+          </div>
+          <div class="beta">Beta</div>
+        </div>
+      </div>`;
+    bodyRoot.querySelector('[data-act="play"]').onclick = startGame;
+    bodyRoot.querySelector('[data-act="tutorial"]').onclick = startGame;
+    bodyRoot.querySelector('[data-act="daily"]').onclick = () => flashToast("Daily reward claimed! +60🪙", () => { app.coins += 60; syncHud(); });
+    bodyRoot.querySelector('[data-nav="moonrise"]').onclick = () => go("moonrise");
+  }
+
+  // ── GAME ──────────────────────────────────────────────────────────────
+  function startGame() {
+    app.screen = "game";
+    app.rng = mulberry32(0x9e37 ^ (app.level * 2654435761));
+    app.targetColor = COLORS[Math.floor(app.rng() * COLORS.length)];
+    app.target = 8 + Math.floor((app.level - 1) * 1.5);
+    app.moves = Math.max(16, 24 - Math.floor((app.level - 1) / 8));
+    app.collected = 0;
+    app.busy = false; app.sel = null; app.nextId = 1;
+    app.grid = freshGrid();
+    renderGame();
+  }
+
+  function freshGrid() {
+    // fill with no initial 3-in-a-row (like the engine's initial layout)
+    const g = [];
+    for (let r = 0; r < H; r++) { g.push([]); for (let c = 0; c < W; c++) g[r].push(null); }
+    for (let r = 0; r < H; r++) {
+      for (let c = 0; c < W; c++) {
+        let color, guard = 0;
+        do {
+          color = COLORS[Math.floor(app.rng() * COLORS.length)];
+          guard++;
+        } while (guard < 20 && (
+          (c >= 2 && g[r][c - 1] && g[r][c - 2] && g[r][c - 1].color === color && g[r][c - 2].color === color) ||
+          (r >= 2 && g[r - 1][c] && g[r - 2][c] && g[r - 1][c].color === color && g[r - 2][c].color === color)
+        ));
+        g[r][c] = { id: app.nextId++, color };
+      }
+    }
+    return g;
+  }
+
+  function renderGame() {
+    setNav("home");
+    const boardW = W * CELL, boardH = H * CELL;
+    bodyRoot.innerHTML = `
+      <div class="view">
+        <div class="game ${app.reduce ? "reduce" : ""}">
+          <div class="gtop">
+            <div class="gtitle">Moonpetal Apothecary<b>Level ${app.level}</b></div>
+            <button class="home-btn" data-act="home">Home</button>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="sl">Moves</div><div class="sv" id="mvs">${app.moves}</div></div>
+            <div class="stat obj"><div class="sl">Objective</div><div class="sv" id="objv">${cap(app.targetColor)} ${app.collected}/${app.target}</div></div>
+          </div>
+          <div class="board-wrap">
+            <div class="board" id="board" style="width:${boardW}px;height:${boardH}px">
+              <div class="toast" id="toast"></div>
+            </div>
+          </div>
+        </div>
+        <div class="overlay" id="ov">
+          <h2 id="ovh"></h2>
+          <p id="ovp"></p>
+          <button id="ovb"></button>
+        </div>
+      </div>`;
+    bodyRoot.querySelector('[data-act="home"]').onclick = () => go("home");
+    paintAll();
+    attachBoard();
+  }
+
+  function tileEl(t) {
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.dataset.id = t.id;
+    el.style.width = CELL + "px";
+    el.style.height = CELL + "px";
+    el.innerHTML = `<div class="tbg" style="background:${TINT[t.color]}"></div>${SVG[t.color]}`;
+    t.el = el;
+    return el;
+  }
+  function place(t, r, c, withTrans) {
+    const rest = `translate(${c * CELL}px, ${r * CELL}px)`;
+    t.el.style.setProperty("--rest", rest);
+    t.el.style.transform = rest;
+  }
+  function paintAll() {
+    const board = document.getElementById("board");
+    // clear existing tiles (keep toast)
+    board.querySelectorAll(".tile").forEach(e => e.remove());
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      const t = app.grid[r][c];
+      if (!t) continue;
+      if (!t.el) tileEl(t);
+      board.appendChild(t.el);
+      place(t, r, c);
+      t.el.onclick = () => tap(r, c);
+    }
+  }
+
+  // pointer swipe
+  let sp = null;
+  function attachBoard() {
+    const board = document.getElementById("board");
+    board.addEventListener("pointerdown", e => {
+      const rect = board.getBoundingClientRect();
+      const c = Math.floor((e.clientX - rect.left) / CELL);
+      const r = Math.floor((e.clientY - rect.top) / CELL);
+      if (r < 0 || r >= H || c < 0 || c >= W) return;
+      sp = { r, c, x: e.clientX, y: e.clientY };
+    });
+    board.addEventListener("pointerup", e => {
+      if (!sp || app.busy) { sp = null; return; }
+      const dx = e.clientX - sp.x, dy = e.clientY - sp.y;
+      if (Math.abs(dx) + Math.abs(dy) < 12) { tap(sp.r, sp.c); sp = null; return; }
+      let tr = sp.r, tc = sp.c;
+      if (Math.abs(dx) > Math.abs(dy)) tc += dx > 0 ? 1 : -1; else tr += dy > 0 ? 1 : -1;
+      if (tr >= 0 && tr < H && tc >= 0 && tc < W) trySwap(sp.r, sp.c, tr, tc);
+      sp = null;
+    });
+  }
+  function tap(r, c) {
+    if (app.busy) return;
+    if (!app.sel) { app.sel = { r, c }; app.grid[r][c].el.classList.add("sel"); return; }
+    const s = app.sel;
+    app.grid[s.r][s.c].el.classList.remove("sel");
+    app.sel = null;
+    const adj = Math.abs(s.r - r) + Math.abs(s.c - c) === 1;
+    if (adj) trySwap(s.r, s.c, r, c);
+    else { app.sel = { r, c }; app.grid[r][c].el.classList.add("sel"); }
+  }
+
+  function swapCells(r1, c1, r2, c2) {
+    const t = app.grid[r1][c1]; app.grid[r1][c1] = app.grid[r2][c2]; app.grid[r2][c2] = t;
+  }
+
+  function trySwap(r1, c1, r2, c2) {
+    if (app.busy) return;
+    const a = app.grid[r1][c1], b = app.grid[r2][c2];
+    if (!a || !b) return;
+    app.busy = true;
+    swapCells(r1, c1, r2, c2);
+    place(a, r2, c2); place(b, r1, c1);
+    const matches = findMatches();
+    if (matches.size === 0) {
+      // invalid — wobble + swap back
+      setTimeout(() => {
+        swapCells(r1, c1, r2, c2);
+        place(a, r1, c1); place(b, r2, c2);
+        a.el.classList.add("wob"); b.el.classList.add("wob");
+        setTimeout(() => { a.el.classList.remove("wob"); b.el.classList.remove("wob"); app.busy = false; }, 280);
+      }, 200);
+      return;
+    }
+    app.moves--;
+    document.getElementById("mvs").textContent = app.moves;
+    setTimeout(() => resolveLoop(0), 200);
+  }
+
+  function findMatches() {
+    const hits = new Set();
+    for (let r = 0; r < H; r++) {
+      let run = 1;
+      for (let c = 1; c <= W; c++) {
+        const same = c < W && app.grid[r][c] && app.grid[r][c - 1] && app.grid[r][c].color === app.grid[r][c - 1].color;
+        if (same) run++;
+        else { if (run >= 3) for (let k = c - run; k < c; k++) hits.add(r + "," + k); run = 1; }
+      }
+    }
+    for (let c = 0; c < W; c++) {
+      let run = 1;
+      for (let r = 1; r <= H; r++) {
+        const same = r < H && app.grid[r][c] && app.grid[r - 1][c] && app.grid[r][c].color === app.grid[r - 1][c].color;
+        if (same) run++;
+        else { if (run >= 3) for (let k = r - run; k < r; k++) hits.add(k + "," + c); run = 1; }
+      }
+    }
+    return hits;
+  }
+
+  function resolveLoop(cascade) {
+    const hits = findMatches();
+    if (hits.size === 0) { endResolve(); return; }
+    // count toward objective
+    let gained = 0;
+    hits.forEach(key => {
+      const [r, c] = key.split(",").map(Number);
+      const t = app.grid[r][c];
+      if (t && t.color === app.targetColor) gained++;
+    });
+    if (gained) {
+      app.collected = Math.min(app.target, app.collected + gained);
+      const o = document.getElementById("objv");
+      if (o) o.textContent = `${cap(app.targetColor)} ${app.collected}/${app.target}`;
+    }
+    // toast
+    const label = cascade >= 3 ? "Amazing!" : cascade >= 2 ? "Great chain!" : cascade >= 1 ? "Nice match!" : "Match!";
+    showToast(label);
+    // pop matched
+    hits.forEach(key => {
+      const [r, c] = key.split(",").map(Number);
+      const t = app.grid[r][c];
+      if (t && t.el) { t.el.classList.add("pop"); }
+      app.grid[r][c] = null;
+    });
+    setTimeout(() => {
+      hits.forEach(key => {
+        const [r, c] = key.split(",").map(Number); void r; void c;
+      });
+      document.querySelectorAll(".tile.pop").forEach(e => e.remove());
+      gravity();
+      setTimeout(() => resolveLoop(cascade + 1), 320);
+    }, 200);
+  }
+
+  function gravity() {
+    const board = document.getElementById("board");
+    for (let c = 0; c < W; c++) {
+      // collect surviving tiles bottom-up
+      let write = H - 1;
+      for (let r = H - 1; r >= 0; r--) {
+        if (app.grid[r][c]) {
+          const t = app.grid[r][c];
+          if (write !== r) { app.grid[write][c] = t; app.grid[r][c] = null; }
+          place(t, write, c);
+          write--;
+        }
+      }
+      // spawn new tiles above, fall in
+      let spawnRow = -1;
+      for (let r = write; r >= 0; r--) {
+        const t = { id: app.nextId++, color: COLORS[Math.floor(app.rng() * COLORS.length)] };
+        app.grid[r][c] = t;
+        tileEl(t);
+        board.appendChild(t.el);
+        // start above the board
+        const startRest = `translate(${c * CELL}px, ${spawnRow * CELL}px)`;
+        t.el.style.setProperty("--rest", startRest);
+        t.el.style.transform = startRest;
+        t.el.onclick = () => tap(r, c);
+        spawnRow--;
+        // next frame → drop to rest
+        requestAnimationFrame(() => requestAnimationFrame(() => place(t, r, c)));
+      }
+    }
+  }
+
+  function endResolve() {
+    app.busy = false;
+    if (app.collected >= app.target) return win();
+    if (app.moves <= 0) return lose();
+  }
+
+  function win() {
+    app.busy = true;
+    const reward = 40 + app.level * 8;
+    app.coins += reward; app.stones += 5; app.stars += 1;
+    app.level++;
+    syncHud();
+    const ov = document.getElementById("ov");
+    document.getElementById("ovh").textContent = "✨ Brewed!";
+    document.getElementById("ovp").textContent = `The moon smiled on your work. +${reward}🪙  +5🏵️  +1⭐`;
+    const b = document.getElementById("ovb");
+    b.textContent = "Next level";
+    b.onclick = () => { ov.classList.remove("show"); startGame(); };
+    ov.classList.add("show");
+  }
+  function lose() {
+    app.busy = true;
+    const ov = document.getElementById("ov");
+    document.getElementById("ovh").textContent = "Out of moves";
+    document.getElementById("ovp").textContent = "The kettle sighed. Try the recipe again?";
+    const b = document.getElementById("ovb");
+    b.textContent = "Retry";
+    b.onclick = () => { ov.classList.remove("show"); startGame(); };
+    ov.classList.add("show");
+  }
+
+  function showToast(text) {
+    const el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  }
+  function flashToast(text, after) {
+    // quick home-screen toast reusing overlay-free element
+    const scr = document.getElementById("screen");
+    const d = document.createElement("div");
+    d.className = "toast show";
+    d.style.top = "18%"; d.style.zIndex = 60;
+    d.textContent = text;
+    scr.appendChild(d);
+    if (after) after();
+    setTimeout(() => d.remove(), 1200);
+  }
+
+  // ── STORE ──────────────────────────────────────────────────────────────
+  function renderStore() {
+    setNav("store");
+    bodyRoot.innerHTML = `
+      <div class="view simple">
+        <h2>Market</h2>
+        <p class="lead">Support the apothecary.</p>
+        <div class="wallet-row">
+          <div class="wtile"><div class="wg">⭐</div><div class="wv">${app.stars}</div><div class="wl">Stars</div></div>
+          <div class="wtile"><div class="wg">🪙</div><div class="wv">${app.coins}</div><div class="wl">Coins</div></div>
+          <div class="wtile"><div class="wg">🔥</div><div class="wv">0</div><div class="wl">Embers</div></div>
+        </div>
+        <div class="sec-h">Starter</div>
+        <div class="prod best"><div class="pi">🎒</div><div><div class="pt">Apothecary Starter Kit</div><div class="ps">80⭐ · 500🪙 · boosters</div></div><div class="price">$2.99</div></div>
+        <div class="sec-h">Stars</div>
+        <div class="prod"><div class="pi">✨</div><div><div class="pt">Pouch of Stars</div><div class="ps">20 stars</div></div><div class="price">$0.99</div></div>
+        <div class="prod"><div class="pi">🌟</div><div><div class="pt">Handful of Stars</div><div class="ps">120 stars · Popular</div></div><div class="price">$4.99</div></div>
+        <div class="prod best"><div class="pi">💫</div><div><div class="pt">Bag of Stars</div><div class="ps">260 stars · Best Value</div></div><div class="price">$9.99</div></div>
+        <div class="sec-h">Piggy Bank</div>
+        <div class="prod"><div class="pi">🐷</div><div><div class="pt">Crack the Piggy</div><div class="ps">0 / 250 saved</div></div><div class="price">$2.99</div></div>
+      </div>`;
+  }
+
+  // ── PROFILE ─────────────────────────────────────────────────────────────
+  function renderProfile() {
+    setNav("home");
+    bodyRoot.innerHTML = `
+      <div class="view simple">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h2 style="margin:0">Profile</h2>
+          <button class="home-btn" data-act="home">Back</button>
+        </div>
+        <div style="text-align:center;background:var(--bg-surface);border:1px solid var(--candle-soft);border-radius:16px;padding:18px;margin-bottom:14px">
+          <div class="crest" style="margin:0 auto 10px;width:88px;height:88px;font-size:44px">🌙</div>
+          <div style="font-size:22px;font-weight:800">Apprentice</div>
+          <div style="font-size:11px;color:var(--parch-dim)">Under the moonlit garden</div>
+        </div>
+        <div class="sec-h">Wallet</div>
+        <div class="wallet-row">
+          <div class="wtile"><div class="wg">🏵️</div><div class="wv">${app.stones}</div><div class="wl">Moonstones</div></div>
+          <div class="wtile"><div class="wg">⭐</div><div class="wv">${app.stars}</div><div class="wl">Stars</div></div>
+          <div class="wtile"><div class="wg">🪙</div><div class="wv">${app.coins}</div><div class="wl">Coins</div></div>
+        </div>
+        <div class="sec-h">Records</div>
+        <div class="wallet-row">
+          <div class="wtile"><div class="wv" style="color:var(--candle)">${app.level - 1}</div><div class="wl">Levels cleared</div></div>
+          <div class="wtile"><div class="wv" style="color:var(--candle)">${app.stones}</div><div class="wl">Rank</div></div>
+        </div>
+      </div>`;
+    bodyRoot.querySelector('[data-act="home"]').onclick = () => go("home");
+  }
+
+  // ── generic coming-soon ────────────────────────────────────────────────
+  const SOON = {
+    moonrise: ["⚔️", "Moonrise Duel", "Compete against other brewers under the same moon.", ["Casual Duel — no rank risk", "Ranked Duel — earn moonstones", "Weekly Cauldron event", "Invite a friend by room code"], "800"],
+    covens: ["🐾", "Covens", "Brew with others. Share ingredients. Grow together.", ["Coven-shared rewards", "Trade cards with covenmates", "Coven chat & strategy", "Coven-only weekly events"], "550"],
+    grimoire: ["📖", "Grimoire", "Every match adds a page to your recipe book.", ["Collect and complete pages", "Trade duplicates", "Win prizes for volumes"], "200"]
+  };
+  function renderSoon(key) {
+    setNav(key);
+    const [g, title, blurb, bullets, gate] = SOON[key];
+    bodyRoot.innerHTML = `
+      <div class="view simple" style="text-align:center">
+        <div class="crest" style="margin:24px auto 14px">${g}</div>
+        <h2 style="font-size:26px">${title}</h2>
+        <p class="lead" style="max-width:26ch;margin:0 auto 18px">${blurb}</p>
+        <div style="text-align:left;background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px">
+          ${bullets.map(b => `<div style="display:flex;gap:8px;padding:4px 0;font-size:13px;color:var(--parch-dim)"><span style="color:var(--candle)">·</span>${b}</div>`).join("")}
+        </div>
+        <div style="display:inline-block;background:var(--bg-surface);border:1px solid var(--candle-soft);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:800;color:var(--candle)">🔒 Unlocks at 🏵️ ${gate}</div>
+      </div>`;
+  }
+
+  // ── navigation ──────────────────────────────────────────────────────────
+  function go(screen) {
+    app.screen = screen;
+    render();
+    syncHud();
+  }
+  document.getElementById("nav").addEventListener("click", e => {
+    const btn = e.target.closest("button"); if (!btn) return;
+    go(btn.dataset.nav);
+  });
+  document.querySelector('.avatar').addEventListener("click", () => go("profile"));
+  document.getElementById("burger").addEventListener("click", () => {
+    flashToast("Menu · Profile · Friends · Settings…");
+  });
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // ── theme toggle ─────────────────────────────────────────────────────────
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const now = cur || (sysDark ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+  });
+
+  // boot
+  syncHud();
+  render();
+})();
+</script>
+</body>
+</html>
