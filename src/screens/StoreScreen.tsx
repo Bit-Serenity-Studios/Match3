@@ -130,7 +130,7 @@ export function StoreScreen(): React.ReactElement {
       </View>
 
       <View style={styles.wallet}>
-        <Text style={typography.small}>💎 {gems} · 🪙 {coins} · 🔥 {embers}</Text>
+        <Text style={typography.small}>⭐ {gems} · 🪙 {coins} · 🔥 {embers}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -142,7 +142,7 @@ export function StoreScreen(): React.ReactElement {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Gems</Text>
+          <Text style={styles.sectionTitle}>Stars</Text>
           {GEM_PACKAGES.map((p) => (
             <ProductCard key={p.sku} product={p} onBuy={() => buyProduct(p)} />
           ))}
@@ -169,7 +169,7 @@ export function StoreScreen(): React.ReactElement {
               disabled={piggy.gems <= 0}
             >
               <Text style={styles.claimLabel}>
-                Crack for {piggy.gems}💎 · {PIGGY_UNLOCK.displayPrice}
+                Crack for {piggy.gems}⭐ · {PIGGY_UNLOCK.displayPrice}
               </Text>
             </Pressable>
           </View>

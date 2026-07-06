@@ -56,7 +56,7 @@ export function HubScreen() {
       <View style={styles.currencies}>
         <Currency label="Coins" value={coins} color={palette.candlelight} />
         <Currency label="Embers" value={embers} color="#e97e7e" />
-        <Currency label="Gems" value={gems} color={palette.purple} />
+        <Currency label="Stars" value={gems} color={palette.purple} />
       </View>
 
       <View style={styles.topRow}>

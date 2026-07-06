@@ -30,7 +30,7 @@ export function TopHud(): React.ReactElement {
 
       <Chip glyph="🏵️" value={fmt(moonstones)} tint={palette.candlelight} />
       <Chip glyph="🪙" value={fmt(coins)} tint={palette.candlelight} />
-      <Chip glyph="💎" value={fmt(gems)} tint={palette.purple} />
+      <Chip glyph="⭐" value={fmt(gems)} tint={palette.purple} />
 
       <Pressable style={styles.menuBtn} onPress={goToMenu}>
         <Text style={styles.menuGlyph}>≡</Text>

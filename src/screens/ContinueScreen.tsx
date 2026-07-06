@@ -76,11 +76,11 @@ export function ContinueScreen({
         onPress={onContinue}
       >
         <Text style={styles.buyTitle}>+{CONTINUE_EXTRA_MOVES} Moves</Text>
-        <Text style={styles.buyPrice}>{price} 💎</Text>
+        <Text style={styles.buyPrice}>{price} ⭐</Text>
       </Pressable>
       {!canAfford && (
         <Text style={[typography.small, { color: palette.danger, marginTop: spacing.xs }]}>
-          Not enough gems.
+          Not enough stars.
         </Text>
       )}
 

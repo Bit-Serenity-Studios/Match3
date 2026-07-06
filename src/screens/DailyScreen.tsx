@@ -73,7 +73,7 @@ export function DailyScreen(): React.ReactElement {
               >
                 <Text style={styles.dayNum}>Day {i + 1}</Text>
                 <Text style={styles.dayReward}>
-                  {[g.coins && `${g.coins}🪙`, g.embers && `${g.embers}🔥`, g.gems && `${g.gems}💎`]
+                  {[g.coins && `${g.coins}🪙`, g.embers && `${g.embers}🔥`, g.gems && `${g.gems}⭐`]
                     .filter(Boolean)
                     .join(' ')}
                 </Text>
@@ -101,7 +101,7 @@ export function DailyScreen(): React.ReactElement {
             {todayLevel.archetype} · same seed for every player today
           </Text>
           <Text style={[typography.small, { marginTop: spacing.sm }]}>
-            Win to earn 200🪙 + 15🔥 + 10💎. Streak: {brew.streak}
+            Win to earn 200🪙 + 15🔥 + 10⭐. Streak: {brew.streak}
           </Text>
           <Pressable
             style={[styles.claimBtn, !canBrew && styles.disabled]}

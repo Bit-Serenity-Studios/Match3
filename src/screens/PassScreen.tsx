@@ -125,7 +125,7 @@ function rewardSummary(r?: { coins?: number; embers?: number; gems?: number }): 
   const parts: string[] = [];
   if (r.coins) parts.push(`${r.coins}🪙`);
   if (r.embers) parts.push(`${r.embers}🔥`);
-  if (r.gems) parts.push(`${r.gems}💎`);
+  if (r.gems) parts.push(`${r.gems}⭐`);
   return parts.join(' ');
 }
 

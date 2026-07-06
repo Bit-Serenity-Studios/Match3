@@ -425,7 +425,7 @@ export function GameScreen() {
         />
         <View pointerEvents="none" style={styles.toastColumn}>
           {toasts.map((t, i) => (
-            <View key={t.id} style={[styles.toast, { opacity: 1 - i * 0.15 }]}>
+            <View key={t.id} style={[styles.toast, { opacity: Math.max(0.35, 0.95 - i * 0.25) }]}>
               <Text style={styles.toastText}>{t.text}</Text>
             </View>
           ))}
@@ -561,26 +561,33 @@ const styles = StyleSheet.create({
   boardWrap: { alignItems: 'center', marginTop: spacing.md },
   toastColumn: {
     position: 'absolute',
-    right: -8,
-    top: 12,
-    gap: 6,
-    alignItems: 'flex-end',
+    left: 0,
+    right: 0,
+    top: '38%',
+    gap: 8,
+    alignItems: 'center',
   },
   toast: {
-    backgroundColor: palette.candlelight,
+    backgroundColor: 'rgba(230, 178, 90, 0.72)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderWidth: 1,
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowColor: palette.candlelight,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   toastText: {
     color: palette.bgDeep,
-    fontWeight: '800',
-    fontSize: 14,
+    fontWeight: '900',
+    fontSize: 20,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(255,255,255,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   abilityBar: {
     marginTop: spacing.md,
