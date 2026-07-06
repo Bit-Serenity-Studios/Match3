@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -127,6 +127,16 @@ export function GameScreen() {
   const [flash, setFlash] = useState(0);
   const [highlight, setHighlight] = useState<CellPos[] | undefined>(undefined);
   const [rejectedSwap, setRejectedSwap] = useState<[CellPos, CellPos] | null>(null);
+  const [pendingSwap, setPendingSwap] = useState<[CellPos, CellPos] | null>(null);
+  const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
+  const toastCounter = useRef(0);
+  const pushToast = useCallback((text: string) => {
+    const id = ++toastCounter.current;
+    setToasts((ts) => [...ts, { id, text }]);
+    setTimeout(() => {
+      setToasts((ts) => ts.filter((t) => t.id !== id));
+    }, 1400);
+  }, []);
   const [ended, setEnded] = useState(false);
   const [charge, setCharge] = useState(0);
   const [castSeed, setCastSeed] = useState(0);
@@ -155,6 +165,7 @@ export function GameScreen() {
   const onSwap = useCallback(
     (a: CellPos, b: CellPos) => {
       if (state.status !== 'active') return;
+      if (pendingSwap) return; // don't queue swaps mid-animation
       const r = applySwap(state, a, b);
       if (!r.accepted) {
         setHighlight([a, b]);
@@ -164,75 +175,99 @@ export function GameScreen() {
         return;
       }
       const cascades = r.events.filter((e) => e.t === 'cascade').length;
-      setFlash((f) => f + Math.min(cascades, 4));
-      if (companion) {
-        setCharge((c) => c + chargeFromEvents(r.events, companion.affinityColor));
-      }
-      setState(r.next);
-      if (r.next.status !== 'active' && !ended) {
-        setEnded(true);
-        const attemptsUsed =
-          useMonetization.getState().continueAttemptsThisLevel;
-        if (r.next.status === 'won') {
-          const rew = rewardsFor(r.next);
-          registerWin(r.next.levelId, rew);
-          streakWin(r.next.levelId);
-          dripPiggy(r.next.levelId.includes('hard') ? 'hardLevelWin' : 'levelWin');
-          resetContinueAttempts();
-          progressPassChallenge('daily.win3', 1, Date.now());
-          progressPassChallenge('weekly.win15', 1, Date.now());
-          progressPassChallenge('weekly.coins500', rew.coins, Date.now());
-          if (tunedLevel.archetype === 'wow') {
-            useRetention.getState().registerWowLevelCleared();
-          }
-          track('level_finished', {
-            levelId: r.next.levelId,
-            result: 'won',
-            score: r.next.score,
-            turnsTaken: r.next.turn,
-            movesRemained: r.next.movesRemaining,
-            boostersUsed: {},
-            attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
-            continuePurchased: attemptsUsed > 0,
-          });
-        } else if (getFlags().continueScreen) {
-          openContinue();
-          track('level_failed', {
-            levelId: r.next.levelId,
-            failMarginPerObjective: r.next.progress.map((p, i) => ({
-              index: i,
-              margin: p.done ? 0 : Math.max(0, 1 - p.progress / p.target),
-            })),
-            score: r.next.score,
-            turnsTaken: r.next.turn,
-          });
-        } else {
-          registerLoss(r.next.levelId);
-          streakLoss();
-          track('level_finished', {
-            levelId: r.next.levelId,
-            result: 'lost',
-            score: r.next.score,
-            turnsTaken: r.next.turn,
-            movesRemained: r.next.movesRemaining,
-            boostersUsed: {},
-            attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
-            continuePurchased: false,
-          });
+      // Animate the swap glide over the CURRENT board, then commit the
+      // engine's result state so the cascade appears at once with a flash.
+      setPendingSwap([a, b]);
+      setTimeout(() => {
+        setPendingSwap(null);
+        setFlash((f) => f + Math.min(cascades + 1, 4));
+        if (companion) {
+          setCharge((c) => c + chargeFromEvents(r.events, companion.affinityColor));
         }
-      }
+        setState(r.next);
+        // Encouraging toast — extra hype for longer chains.
+        const label =
+          cascades >= 3
+            ? 'Amazing!'
+            : cascades >= 2
+              ? 'Great chain!'
+              : cascades >= 1
+                ? 'Nice match!'
+                : 'Match!';
+        pushToast(label);
+        if (cascades >= 2) {
+          setTimeout(() => pushToast('+combo'), 180);
+        }
+        if (r.next.status !== 'active' && !ended) {
+          setEnded(true);
+          const attemptsUsed =
+            useMonetization.getState().continueAttemptsThisLevel;
+          if (r.next.status === 'won') {
+            const rew = rewardsFor(r.next);
+            registerWin(r.next.levelId, rew);
+            streakWin(r.next.levelId);
+            dripPiggy(r.next.levelId.includes('hard') ? 'hardLevelWin' : 'levelWin');
+            resetContinueAttempts();
+            progressPassChallenge('daily.win3', 1, Date.now());
+            progressPassChallenge('weekly.win15', 1, Date.now());
+            progressPassChallenge('weekly.coins500', rew.coins, Date.now());
+            if (tunedLevel.archetype === 'wow') {
+              useRetention.getState().registerWowLevelCleared();
+            }
+            track('level_finished', {
+              levelId: r.next.levelId,
+              result: 'won',
+              score: r.next.score,
+              turnsTaken: r.next.turn,
+              movesRemained: r.next.movesRemaining,
+              boostersUsed: {},
+              attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
+              continuePurchased: attemptsUsed > 0,
+            });
+          } else if (getFlags().continueScreen) {
+            openContinue();
+            track('level_failed', {
+              levelId: r.next.levelId,
+              failMarginPerObjective: r.next.progress.map((p, i) => ({
+                index: i,
+                margin: p.done ? 0 : Math.max(0, 1 - p.progress / p.target),
+              })),
+              score: r.next.score,
+              turnsTaken: r.next.turn,
+            });
+          } else {
+            registerLoss(r.next.levelId);
+            streakLoss();
+            track('level_finished', {
+              levelId: r.next.levelId,
+              result: 'lost',
+              score: r.next.score,
+              turnsTaken: r.next.turn,
+              movesRemained: r.next.movesRemaining,
+              boostersUsed: {},
+              attempts: (consecutiveFails[r.next.levelId] ?? 0) + 1,
+              continuePurchased: false,
+            });
+          }
+        }
+      }, 220);
     },
     [
       state,
       ended,
       companion,
+      pendingSwap,
+      pushToast,
       registerWin,
+      registerLoss,
       streakWin,
       streakLoss,
       dripPiggy,
       resetContinueAttempts,
       openContinue,
       progressPassChallenge,
+      consecutiveFails,
+      tunedLevel,
     ],
   );
 
@@ -384,8 +419,16 @@ export function GameScreen() {
           onSwap={onSwap}
           highlight={highlight}
           rejectedSwap={rejectedSwap}
+          pendingSwap={pendingSwap}
           flash={flash}
         />
+        <View pointerEvents="none" style={styles.toastColumn}>
+          {toasts.map((t, i) => (
+            <View key={t.id} style={[styles.toast, { opacity: 1 - i * 0.15 }]}>
+              <Text style={styles.toastText}>{t.text}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       {companion && ability && (
@@ -515,6 +558,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   boardWrap: { alignItems: 'center', marginTop: spacing.md },
+  toastColumn: {
+    position: 'absolute',
+    right: -8,
+    top: 12,
+    gap: 6,
+    alignItems: 'flex-end',
+  },
+  toast: {
+    backgroundColor: palette.candlelight,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  toastText: {
+    color: palette.bgDeep,
+    fontWeight: '800',
+    fontSize: 14,
+  },
   abilityBar: {
     marginTop: spacing.md,
     padding: spacing.md,

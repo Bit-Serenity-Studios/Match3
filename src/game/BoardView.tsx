@@ -12,8 +12,11 @@ interface Props {
   size: number;
   onSwap: (a: CellPos, b: CellPos) => void;
   highlight?: CellPos[];
-  /** Two cells that failed a swap — plays the "reject" shake. */
+  /** Two cells whose swap was rejected — plays the wobble. */
   rejectedSwap?: [CellPos, CellPos] | null;
+  /** Two cells whose swap is currently being animated — plays the glide.
+   *  The board passed in should still be the PRE-swap board while this is set. */
+  pendingSwap?: [CellPos, CellPos] | null;
   flash?: number; // increment on cascade for screen-shake
 }
 
@@ -30,15 +33,26 @@ const specialFont = matchFont({
   fontWeight: 'bold',
 });
 
-const SWAP_DURATION_MS = 180;
+const SWAP_DURATION_MS = 220;
 const REJECT_DURATION_MS = 260;
 
+/** Ease-out cubic — quick start, gentle settle. */
+function easeOut(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+/** Overshoot cubic for a little "bounce" at the end of the glide. */
+function easeOutBack(t: number): number {
+  const c1 = 1.35;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
 interface SwapAnim {
-  from: CellPos;
-  to: CellPos;
-  /** Tile snapshot at `to` in the PREVIOUS board — this is what visually moves toward `from`. */
-  fromTile: Tile | null;
-  toTile: Tile | null;
+  a: CellPos;
+  b: CellPos;
+  tileA: Tile | null;
+  tileB: Tile | null;
   startedAt: number;
 }
 
@@ -48,55 +62,13 @@ interface RejectAnim {
   startedAt: number;
 }
 
-/** Ease-out cubic — quick start, gentle settle. */
-function easeOut(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-/** Find the single-swap that turned prevBoard into nextBoard, if any.
- *  Returns null when the diff isn't a clean two-cell adjacent swap. */
-function detectSwap(
-  prev: BoardSnapshot,
-  next: BoardSnapshot,
-): { a: CellPos; b: CellPos } | null {
-  if (prev.width !== next.width || prev.height !== next.height) return null;
-  const changed: CellPos[] = [];
-  for (let row = 0; row < prev.height; row++) {
-    for (let col = 0; col < prev.width; col++) {
-      const i = idx(prev.width, row, col);
-      const pt = prev.tiles[i] ?? null;
-      const nt = next.tiles[i] ?? null;
-      if (!tilesEqual(pt, nt)) {
-        changed.push({ row, col });
-        if (changed.length > 2) return null;
-      }
-    }
-  }
-  if (changed.length !== 2) return null;
-  const [a, b] = changed as [CellPos, CellPos];
-  const dr = Math.abs(a.row - b.row);
-  const dc = Math.abs(a.col - b.col);
-  if (dr + dc !== 1) return null;
-  return { a, b };
-}
-
-function tilesEqual(a: Tile | null, b: Tile | null): boolean {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  return (
-    a.color === b.color &&
-    a.special === b.special &&
-    (a.blocker?.kind ?? null) === (b.blocker?.kind ?? null) &&
-    (a.blocker?.layers ?? 0) === (b.blocker?.layers ?? 0)
-  );
-}
-
 export function BoardView({
   board,
   size,
   onSwap,
   highlight,
   rejectedSwap,
+  pendingSwap,
   flash = 0,
 }: Props) {
   const cellSize = size / Math.max(board.width, board.height);
@@ -133,33 +105,29 @@ export function BoardView({
     [board, cellSize, onSwap],
   );
 
-  // ─── Swap-glide animation ─────────────────────────────────────────────
-  // Detect a two-cell adjacent diff each time `board` changes; if we find
-  // one, spawn a SwapAnim that renders the two moving tiles over the top of
-  // the new board for SWAP_DURATION_MS. `now` ticks at ~60fps while the
-  // animation is live so we can interpolate positions.
-  const prevBoardRef = useRef<BoardSnapshot>(board);
   const [swapAnim, setSwapAnim] = useState<SwapAnim | null>(null);
   const [rejectAnim, setRejectAnim] = useState<RejectAnim | null>(null);
   const [now, setNow] = useState(0);
 
+  // Spawn / retire the swap animation when pendingSwap changes.
   useEffect(() => {
-    const prev = prevBoardRef.current;
-    prevBoardRef.current = board;
-    if (prev === board) return;
-    const swap = detectSwap(prev, board);
-    if (!swap) return;
-    // The visible glide reads more naturally when we render the OLD tile
-    // sliding from its OLD position into its NEW position — so we capture
-    // the tile snapshots from the PREVIOUS board keyed by their NEW cells.
+    if (!pendingSwap) {
+      setSwapAnim(null);
+      return;
+    }
+    const [a, b] = pendingSwap;
     setSwapAnim({
-      from: swap.a,
-      to: swap.b,
-      fromTile: getTile(prev, swap.a),
-      toTile: getTile(prev, swap.b),
+      a,
+      b,
+      tileA: getTile(board, a),
+      tileB: getTile(board, b),
       startedAt: Date.now(),
     });
-  }, [board]);
+    // Board reference intentionally excluded from deps — we only want to
+    // spawn the anim when pendingSwap changes; capturing the board at
+    // spawn time is the correct behavior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSwap]);
 
   useEffect(() => {
     if (!rejectedSwap) return;
@@ -174,8 +142,8 @@ export function BoardView({
     if (!swapAnim && !rejectAnim) return;
     let raf: number;
     const tick = () => {
-      setNow(Date.now());
       const t = Date.now();
+      setNow(t);
       if (swapAnim && t - swapAnim.startedAt >= SWAP_DURATION_MS) {
         setSwapAnim(null);
       }
@@ -199,20 +167,24 @@ export function BoardView({
 
   const shake = (flash % 2) * 2 - 1;
 
-  // Swap-anim progress (0..1) and offsets for the two moving tiles
-  const swapProgress = swapAnim
-    ? easeOut(Math.min(1, (now - swapAnim.startedAt) / SWAP_DURATION_MS))
+  // Swap animation: interpolate positions with a slight overshoot
+  const swapRawT = swapAnim
+    ? Math.min(1, (now - swapAnim.startedAt) / SWAP_DURATION_MS)
     : 0;
-  const swapFromKey = swapAnim ? `${swapAnim.from.row},${swapAnim.from.col}` : null;
-  const swapToKey = swapAnim ? `${swapAnim.to.row},${swapAnim.to.col}` : null;
+  const swapT = swapAnim ? easeOutBack(swapRawT) : 0;
+  const swapAKey = swapAnim ? `${swapAnim.a.row},${swapAnim.a.col}` : null;
+  const swapBKey = swapAnim ? `${swapAnim.b.row},${swapAnim.b.col}` : null;
 
-  // Reject-anim: sine wobble left/right for the two rejected cells
+  // Reject wobble
   const rejectProgress = rejectAnim
     ? Math.min(1, (now - rejectAnim.startedAt) / REJECT_DURATION_MS)
     : 0;
   const rejectOffset =
     rejectAnim && rejectProgress < 1
-      ? Math.sin(rejectProgress * Math.PI * 3) * cellSize * 0.12 * (1 - rejectProgress)
+      ? Math.sin(rejectProgress * Math.PI * 3) *
+        cellSize *
+        0.14 *
+        (1 - rejectProgress)
       : 0;
   const rejectSet = rejectAnim
     ? new Set([
@@ -245,16 +217,13 @@ export function BoardView({
           const t = getTile(board, { row, col });
           const cellKey = `${row},${col}`;
           const isHi = highlightSet.has(cellKey);
-
-          // Suppress the two swapping cells' NEW tiles while the glide is
-          // running — the moving tile overlay will render them instead.
-          const isSwapping = swapAnim && (cellKey === swapFromKey || cellKey === swapToKey);
+          const isSwapping = swapAnim && (cellKey === swapAKey || cellKey === swapBKey);
+          // Hide the underlying tile at the swap cells; the moving overlay draws them.
           const showTileHere = !isSwapping;
 
-          // Reject wobble — nudge x by rejectOffset (mirrored between the pair)
           const wobble =
-            rejectSet && rejectSet.has(cellKey)
-              ? cellKey === `${rejectAnim!.a.row},${rejectAnim!.a.col}`
+            rejectSet && rejectSet.has(cellKey) && rejectAnim
+              ? cellKey === `${rejectAnim.a.row},${rejectAnim.a.col}`
                 ? rejectOffset
                 : -rejectOffset
               : 0;
@@ -315,22 +284,24 @@ export function BoardView({
           );
         })}
 
-        {/* Two moving tiles for the swap glide */}
+        {/* Two moving tiles for the swap glide, rendered on top */}
         {swapAnim && (
           <>
             <MovingTile
-              tile={swapAnim.fromTile}
-              fromCell={swapAnim.from}
-              toCell={swapAnim.to}
-              progress={swapProgress}
+              tile={swapAnim.tileA}
+              fromCell={swapAnim.a}
+              toCell={swapAnim.b}
+              progress={swapT}
               cellSize={cellSize}
+              scale={1 + Math.sin(swapRawT * Math.PI) * 0.08}
             />
             <MovingTile
-              tile={swapAnim.toTile}
-              fromCell={swapAnim.to}
-              toCell={swapAnim.from}
-              progress={swapProgress}
+              tile={swapAnim.tileB}
+              fromCell={swapAnim.b}
+              toCell={swapAnim.a}
+              progress={swapT}
               cellSize={cellSize}
+              scale={1 + Math.sin(swapRawT * Math.PI) * 0.08}
             />
           </>
         )}
@@ -346,24 +317,47 @@ interface MovingTileProps {
   toCell: CellPos;
   progress: number;
   cellSize: number;
+  scale: number;
 }
 
-/** Renders a tile at an interpolated position between fromCell and toCell. */
-function MovingTile({ tile, fromCell, toCell, progress, cellSize }: MovingTileProps): React.ReactElement | null {
+function MovingTile({
+  tile,
+  fromCell,
+  toCell,
+  progress,
+  cellSize,
+  scale,
+}: MovingTileProps): React.ReactElement | null {
   if (!tile?.color) return null;
   const sx = fromCell.col * cellSize;
   const sy = fromCell.row * cellSize;
   const ex = toCell.col * cellSize;
   const ey = toCell.row * cellSize;
-  const x = sx + (ex - sx) * progress + 3;
-  const y = sy + (ey - sy) * progress + 3;
-  const w = cellSize - 6;
+  const cx = sx + (ex - sx) * progress + cellSize / 2;
+  const cy = sy + (ey - sy) * progress + cellSize / 2;
+  const w = (cellSize - 6) * scale;
+  const inner = (cellSize - 14) * scale;
   return (
     <>
-      <RoundedRect x={x + 4} y={y + 4} width={w - 8} height={w - 8} r={6} color={TILE_HEX[tile.color]} />
+      <RoundedRect
+        x={cx - w / 2}
+        y={cy - w / 2}
+        width={w}
+        height={w}
+        r={8}
+        color={palette.bgSurface}
+      />
+      <RoundedRect
+        x={cx - inner / 2}
+        y={cy - inner / 2}
+        width={inner}
+        height={inner}
+        r={6}
+        color={TILE_HEX[tile.color]}
+      />
       <Text
-        x={x + w / 2 - 8}
-        y={y + w / 2 + 8}
+        x={cx - 8}
+        y={cy + 8}
         text={TILE_GLYPH[tile.color]}
         font={glyphFont}
         color={palette.bgDeep}
