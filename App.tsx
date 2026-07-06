@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SplashScreen } from './src/screens/SplashScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { HubScreen } from './src/screens/HubScreen';
 import { StoreScreen } from './src/screens/StoreScreen';
@@ -28,6 +29,7 @@ export default function App(): React.ReactElement {
   const endSession = useTelemetry((s) => s.endSession);
   const refreshCalendar = useRetention((s) => s.refreshCalendar);
   const tosAcceptedAt = useProfile((s) => s.tosAcceptedAt);
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
     startSession(Date.now(), APP_VERSION);
@@ -43,7 +45,9 @@ export default function App(): React.ReactElement {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {needsTos ? (
+      {!splashDone ? (
+        <SplashScreen onDone={() => setSplashDone(true)} />
+      ) : needsTos ? (
         <TosModal />
       ) : screen === 'menu' ? (
         <MenuScreen />

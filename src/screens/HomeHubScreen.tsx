@@ -1,211 +1,370 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Animated,
+  Easing,
+} from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { ShellFrame } from './shell/ShellFrame';
+import { LEVELS } from '../levels/catalog';
 
 /**
- * Home hub — the default landing after login. Two big mode cards:
- * "Solo Journey" (the 60-level campaign) and "Moonrise Duel" (online 1v1,
- * placeholder until a backend + matchmaking are wired up).
+ * The home landing screen. Structure inspired by the classic
+ * competitive match-3 home layout — big single PLAY button as the primary
+ * CTA, a "Next Unlock" progress bar up top, a small "Learn the Basics"
+ * tutorial trigger in a card, and a secondary card for the online mode.
  *
- * Below the mode cards: a Daily Brew callout, a current-level continue
- * card, and a Streak stat.
+ * Kept in our moonlit aesthetic — no purple, no mascot art copied.
  */
 export function HomeHubScreen(): React.ReactElement {
   const goToGame = useUI((s) => s.goToGame);
-  const goToDaily = useUI((s) => s.goToDaily);
   const goToMoonrise = useUI((s) => s.goToMoonrise);
+  const goToDaily = useUI((s) => s.goToDaily);
   const currentLevelIndex = useProfile((s) => s.currentLevelIndex);
-  const moonstones = useProfile((s) => s.moonstones);
   const highest = useProfile((s) => s.highestUnlocked);
+  const tutorialSeen = useProfile((s) => s.tutorialSeen);
+  const markTutorialUnseen = useProfile((s) => s.markTutorialSeen);
+  const setTutorialSeen = (v: boolean) => {
+    // Bypass the setter for the on-demand replay: writing directly via
+    // setState-style access. We just clear the flag so GameScreen shows
+    // the overlay again.
+    useProfile.setState({ tutorialSeen: v });
+    void markTutorialUnseen;
+  };
+
+  const nextUnlock = useMemo(() => computeNextUnlock(highest), [highest]);
+
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1.05,
+          duration: 900,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [pulse]);
+
+  const startBasics = () => {
+    setTutorialSeen(false);
+    goToGame();
+  };
 
   return (
     <ShellFrame>
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.section}>Play</Text>
-
-        {/* Solo campaign */}
-        <Pressable style={styles.modeCardSolo} onPress={goToGame}>
-          <View style={styles.modeIcon}>
-            <Text style={styles.modeGlyph}>🌿</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.modeTitle}>Solo Journey</Text>
-            <Text style={styles.modeSub}>
-              {highest > 0
-                ? `Continue at Level ${currentLevelIndex + 1}`
-                : '60 hand-crafted levels · no timer'}
-            </Text>
-            <View style={styles.modeChipRow}>
-              <View style={styles.modeChip}>
-                <Text style={styles.modeChipText}>Offline</Text>
-              </View>
-              <View style={styles.modeChip}>
-                <Text style={styles.modeChipText}>Cozy</Text>
-              </View>
+        {/* Next unlock progress bar */}
+        <View style={styles.unlockBar}>
+          <View style={styles.unlockTop}>
+            <Text style={styles.trophy}>🏆</Text>
+            <View style={styles.unlockBarTrack}>
+              <View
+                style={[
+                  styles.unlockBarFill,
+                  { width: `${nextUnlock.pct * 100}%` },
+                ]}
+              />
+              <Text style={styles.unlockBarText}>
+                {nextUnlock.current} / {nextUnlock.target}
+              </Text>
+            </View>
+            <View style={styles.unlockReward}>
+              <Text style={styles.unlockRewardGlyph}>{nextUnlock.rewardGlyph}</Text>
             </View>
           </View>
-          <Text style={styles.chev}>›</Text>
-        </Pressable>
+          <Text style={styles.unlockLabel}>
+            {nextUnlock.remaining > 0
+              ? `Win ${nextUnlock.remaining} more ${nextUnlock.remaining === 1 ? 'level' : 'levels'} — ${nextUnlock.rewardName}`
+              : `${nextUnlock.rewardName} unlocked!`}
+          </Text>
+        </View>
 
-        {/* Online competitive */}
-        <Pressable style={styles.modeCardOnline} onPress={goToMoonrise}>
-          <View style={styles.modeIcon}>
-            <Text style={styles.modeGlyph}>⚔️</Text>
+        <View style={styles.stage}>
+          {/* Left card — Learn the Basics (tutorial trigger) */}
+          <View style={styles.leftCol}>
+            <Pressable style={styles.miniCard} onPress={startBasics}>
+              <Text style={styles.miniCardGlyph}>📜</Text>
+              <Text style={styles.miniCardTitle}>
+                Learn the{'\n'}Basics
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.miniCard, { marginTop: spacing.sm }]}
+              onPress={goToDaily}
+            >
+              <Text style={styles.miniCardGlyph}>☕</Text>
+              <Text style={styles.miniCardTitle}>Daily{'\n'}Brew</Text>
+            </Pressable>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.modeTitle}>Moonrise Duel</Text>
-            <Text style={styles.modeSub}>
-              Compete for moonstones · Ranked 1v1
-            </Text>
-            <View style={styles.modeChipRow}>
-              <View style={[styles.modeChip, styles.betaChip]}>
-                <Text style={styles.modeChipText}>Beta</Text>
-              </View>
-              <View style={styles.modeChip}>
-                <Text style={styles.modeChipText}>Online</Text>
-              </View>
+
+          {/* Center hero + Play button */}
+          <View style={styles.centerCol}>
+            <View style={styles.heroCrest}>
+              <Text style={styles.heroGlyph}>🌙</Text>
             </View>
-          </View>
-          <Text style={styles.chev}>›</Text>
-        </Pressable>
-
-        <Text style={styles.section}>Today</Text>
-
-        <Pressable style={styles.smallCard} onPress={goToDaily}>
-          <Text style={styles.smallCardGlyph}>☕</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.smallCardTitle}>Daily Brew</Text>
-            <Text style={styles.smallCardSub}>
-              Today’s seeded level · same for every player
+            <Text style={styles.heroTitle}>
+              {highest === 0 ? 'Ready to brew?' : `Level ${currentLevelIndex + 1}`}
             </Text>
-          </View>
-          <Text style={styles.chev}>›</Text>
-        </Pressable>
+            <Text style={styles.heroSub}>Solo Journey</Text>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Rank</Text>
-            <Text style={styles.statValue}>🏵️ {moonstones}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Cleared</Text>
-            <Text style={styles.statValue}>{highest} / 60</Text>
+            <Animated.View style={[styles.playBtnWrap, { transform: [{ scale: pulse }] }]}>
+              <Pressable style={styles.playBtn} onPress={goToGame}>
+                <Text style={styles.playLabel}>PLAY</Text>
+              </Pressable>
+            </Animated.View>
           </View>
         </View>
+
+        {/* Secondary — online mode */}
+        <Pressable style={styles.onlineCard} onPress={goToMoonrise}>
+          <View style={styles.onlineIcon}>
+            <Text style={styles.onlineGlyph}>⚔️</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.onlineTitle}>Moonrise Duel</Text>
+            <Text style={styles.onlineSub}>Compete for moonstones · 1v1 online</Text>
+          </View>
+          <View style={styles.betaBadge}>
+            <Text style={styles.betaText}>Beta</Text>
+          </View>
+        </Pressable>
+
+        {!tutorialSeen && highest === 0 && (
+          <Text style={styles.firstHint}>Tap PLAY to begin your first brew.</Text>
+        )}
       </ScrollView>
     </ShellFrame>
   );
 }
 
+interface NextUnlock {
+  current: number;
+  target: number;
+  pct: number;
+  remaining: number;
+  rewardName: string;
+  rewardGlyph: string;
+}
+
+/** What does the player unlock next? Uses the 60-level campaign as the
+ *  ladder — every 5 levels is a milestone. */
+function computeNextUnlock(highest: number): NextUnlock {
+  const MILESTONES: Array<{ at: number; name: string; glyph: string }> = [
+    { at: 3, name: 'Apothecary Hub', glyph: '🏛️' },
+    { at: 6, name: 'Companions', glyph: '🐾' },
+    { at: 9, name: 'Expeditions', glyph: '🗺️' },
+    { at: 15, name: 'Battle Pass', glyph: '⭐' },
+    { at: 20, name: 'Advanced Recipes', glyph: '🧪' },
+    { at: 30, name: 'Legendary Companions', glyph: '👑' },
+    { at: 45, name: 'Master Brewer', glyph: '🏆' },
+    { at: 60, name: 'Grand Cauldron', glyph: '🎃' },
+  ];
+  const next = MILESTONES.find((m) => highest < m.at) ?? MILESTONES[MILESTONES.length - 1]!;
+  const prev = [...MILESTONES].reverse().find((m) => m.at <= highest);
+  const floor = prev?.at ?? 0;
+  const target = next.at;
+  const current = Math.min(highest, target);
+  const pct = target === floor ? 1 : (current - floor) / (target - floor);
+  return {
+    current,
+    target,
+    pct: Math.max(0, Math.min(1, pct)),
+    remaining: Math.max(0, target - current),
+    rewardName: next.name,
+    rewardGlyph: next.glyph,
+  };
+}
+
 const styles = StyleSheet.create({
-  body: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+  body: { padding: spacing.md, paddingBottom: spacing.xxl },
+  unlockBar: {
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.border,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
   },
-  section: {
-    ...typography.small,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    color: palette.parchmentDim,
-  },
-  modeCardSolo: {
+  unlockTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.bgSurface,
-    borderColor: palette.emerald,
-    borderWidth: 2,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  modeCardOnline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: palette.bgSurface,
+  trophy: { fontSize: 22 },
+  unlockBarTrack: {
+    flex: 1,
+    height: 26,
+    backgroundColor: palette.bgSurface2,
+    borderRadius: 13,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  unlockBarFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: palette.candlelight,
+  },
+  unlockBarText: {
+    textAlign: 'center',
+    color: palette.bgDeep,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  unlockReward: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.md,
+    backgroundColor: palette.bgSurface2,
     borderColor: palette.candlelight,
     borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unlockRewardGlyph: { fontSize: 22 },
+  unlockLabel: {
+    ...typography.small,
+    marginTop: 6,
+    textAlign: 'center',
+    color: palette.parchmentDim,
+  },
+  stage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  leftCol: {
+    width: 96,
+    marginRight: spacing.sm,
+  },
+  miniCard: {
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.border,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    alignItems: 'center',
+  },
+  miniCardGlyph: { fontSize: 28, marginBottom: 4 },
+  miniCardTitle: {
+    color: palette.parchment,
+    fontWeight: '700',
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  centerCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  heroCrest: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.candlelightSoft,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    shadowColor: palette.candlelight,
+    shadowOpacity: 0.4,
+    shadowRadius: 22,
+  },
+  heroGlyph: { fontSize: 66 },
+  heroTitle: {
+    ...typography.h1,
+    fontSize: 20,
+  },
+  heroSub: {
+    ...typography.small,
+    marginTop: 2,
+    marginBottom: spacing.lg,
+  },
+  playBtnWrap: {
+    shadowColor: palette.candlelight,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  playBtn: {
+    backgroundColor: palette.candlelight,
+    paddingHorizontal: spacing.xxl + spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 3,
+    borderColor: palette.candlelightSoft,
+  },
+  playLabel: {
+    color: palette.bgDeep,
+    fontWeight: '900',
+    fontSize: 26,
+    letterSpacing: 2,
+  },
+  onlineCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.purple,
+    borderWidth: 2,
     borderRadius: radii.lg,
     padding: spacing.md,
     gap: spacing.md,
   },
-  modeIcon: {
-    width: 56,
-    height: 56,
+  onlineIcon: {
+    width: 44,
+    height: 44,
     borderRadius: radii.md,
     backgroundColor: palette.bgSurface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modeGlyph: { fontSize: 30 },
-  modeTitle: {
-    ...typography.h2,
-    fontSize: 18,
+  onlineGlyph: { fontSize: 22 },
+  onlineTitle: {
+    color: palette.parchment,
+    fontWeight: '700',
+    fontSize: 16,
   },
-  modeSub: {
+  onlineSub: {
     ...typography.small,
-    color: palette.parchmentDim,
     marginTop: 2,
   },
-  modeChipRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: spacing.xs,
-  },
-  modeChip: {
-    backgroundColor: palette.bgSurface2,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    borderColor: palette.border,
-    borderWidth: 1,
-  },
-  betaChip: {
+  betaBadge: {
     backgroundColor: palette.purple,
-    borderColor: palette.purpleDeep,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
   },
-  modeChipText: {
+  betaText: {
     color: palette.parchment,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  chev: {
-    color: palette.parchmentDim,
-    fontSize: 28,
-  },
-  smallCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: palette.bgSurface,
-    borderColor: palette.border,
-    borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    gap: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  smallCardGlyph: { fontSize: 22 },
-  smallCardTitle: { ...typography.body, color: palette.parchment, fontWeight: '600' },
-  smallCardSub: { ...typography.small, marginTop: 2 },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  firstHint: {
     marginTop: spacing.md,
+    textAlign: 'center',
+    color: palette.candlelight,
+    fontStyle: 'italic',
+    fontSize: 13,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: palette.bgSurface,
-    borderColor: palette.border,
-    borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  statLabel: { ...typography.small, marginBottom: 4 },
-  statValue: { ...typography.h2, fontSize: 20 },
 });
+
+// LEVELS import guard so the file bundles even if the catalog reshapes.
+void LEVELS;
