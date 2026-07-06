@@ -37,10 +37,11 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          # Repo is public, so the workflow can switch Pages on by itself
-          # (Source: GitHub Actions) — no manual toggle in repo settings.
-          enablement: true
+        # NOTE: Pages must be turned on ONCE by a repo admin before this runs:
+        # repo Settings → Pages → Build and deployment → Source: "GitHub Actions".
+        # GitHub blocks the Actions token from creating the Pages site itself on
+        # org-owned repos ("Resource not accessible by integration"), so we can't
+        # auto-enable it. After that one toggle, every push deploys automatically.
 
       - name: Upload docs/ as the Pages artifact
         uses: actions/upload-pages-artifact@v3
