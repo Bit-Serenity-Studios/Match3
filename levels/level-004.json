@@ -1,0 +1,22 @@
+{
+  "id": "level-004",
+  "width": 6,
+  "height": 7,
+  "dropWeights": {
+    "moonpetal": 1,
+    "vial": 1,
+    "runestone": 1,
+    "resin": 1.4,
+    "mushroom": 1
+  },
+  "objectives": [
+    {
+      "kind": "collectColor",
+      "color": "resin",
+      "count": 14
+    }
+  ],
+  "moves": 34,
+  "archetype": "tutorial",
+  "seed": 20261095
+}

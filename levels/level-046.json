@@ -1,0 +1,22 @@
+{
+  "id": "level-046",
+  "width": 7,
+  "height": 8,
+  "dropWeights": {
+    "moonpetal": 1.15,
+    "vial": 1,
+    "runestone": 1,
+    "resin": 1,
+    "mushroom": 1
+  },
+  "objectives": [
+    {
+      "kind": "collectColor",
+      "color": "moonpetal",
+      "count": 24
+    }
+  ],
+  "moves": 20,
+  "archetype": "wow",
+  "seed": 20266597
+}

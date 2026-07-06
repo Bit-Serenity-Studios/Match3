@@ -1,0 +1,177 @@
+{
+  "id": "level-054",
+  "width": 8,
+  "height": 9,
+  "layout": [
+    {
+      "color": "moonpetal",
+      "blocker": {
+        "kind": "ivy",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "vine",
+        "layers": 2
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    {
+      "color": null,
+      "blocker": {
+        "kind": "stoneRune",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "moonpetal",
+      "blocker": {
+        "kind": "ivy",
+        "layers": 1
+      }
+    }
+  ],
+  "dropWeights": {
+    "moonpetal": 1,
+    "vial": 1,
+    "runestone": 1,
+    "resin": 1.1,
+    "mushroom": 1
+  },
+  "objectives": [
+    {
+      "kind": "collectColor",
+      "color": "resin",
+      "count": 65
+    },
+    {
+      "kind": "collectColor",
+      "color": "moonpetal",
+      "count": 38
+    },
+    {
+      "kind": "clearBlockers",
+      "blocker": "vine"
+    }
+  ],
+  "moves": 10,
+  "archetype": "hard",
+  "seed": 20267645
+}

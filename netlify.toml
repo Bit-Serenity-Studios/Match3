@@ -1,0 +1,22 @@
+# Netlify config for the web preview.
+#
+# Netlify's free tier deploys from a PRIVATE GitHub repo and auto-rebuilds
+# on every push — unlike GitHub Pages, which requires a public repo or a
+# paid plan. There's no build step: the preview is the static file in
+# docs/index.html.
+#
+# One-time setup (see docs/README.md):
+#   1. netlify.com → sign up with GitHub
+#   2. Add new site → Import from GitHub → pick this repo
+#   3. It reads this file, so just click Deploy (publish dir = docs)
+#   4. Netlify gives a stable URL that redeploys on each push.
+
+[build]
+  publish = "docs"
+  command = ""
+
+# Send any unknown path to the single-page preview.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,48 @@
+name: Deploy web preview
+
+# Publishes the self-contained playable preview in docs/ to GitHub Pages.
+# The preview is a single static HTML file (no build step) that mirrors the
+# app's engine, art, and screen flow — see docs/README.md.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/moonpetal-phase-4-economy-ykq7a3
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
+  # Allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let an in-progress run finish rather than cancel.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload docs/ as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

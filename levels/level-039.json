@@ -1,0 +1,102 @@
+{
+  "id": "level-039",
+  "width": 7,
+  "height": 8,
+  "layout": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "frostGlass",
+        "layers": 1
+      }
+    },
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "frostGlass",
+        "layers": 1
+      }
+    },
+    {
+      "color": "resin",
+      "blocker": {
+        "kind": "frostGlass",
+        "layers": 1
+      }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "dropWeights": {
+    "moonpetal": 1,
+    "vial": 1,
+    "runestone": 1,
+    "resin": 1,
+    "mushroom": 1
+  },
+  "objectives": [
+    {
+      "kind": "collectColor",
+      "color": "resin",
+      "count": 38
+    },
+    {
+      "kind": "clearBlockers",
+      "blocker": "frostGlass"
+    }
+  ],
+  "moves": 15,
+  "archetype": "procrastinating",
+  "seed": 20265680
+}
