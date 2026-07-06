@@ -37,6 +37,10 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          # Repo is public, so the workflow can switch Pages on by itself
+          # (Source: GitHub Actions) — no manual toggle in repo settings.
+          enablement: true
 
       - name: Upload docs/ as the Pages artifact
         uses: actions/upload-pages-artifact@v3
