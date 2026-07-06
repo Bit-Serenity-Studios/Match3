@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
@@ -6,36 +6,30 @@ import { useProfile } from '../state/profile';
 import { useRetention } from '../state/retention';
 import { useUI } from '../state/ui';
 import {
-  CALENDAR_CYCLE_DAYS,
   CALENDAR_REWARDS,
+  startOfUTCDay,
 } from '../retention/calendar';
-import { levelForDay } from '../retention/dailyBrew';
-import { startOfUTCDay } from '../retention/calendar';
 import { track } from '../telemetry/logger';
+import { click } from '../audio/click';
+import { sfx } from '../audio/soundEffects';
 
 /**
- * The retention hub: 7-day calendar + daily brew entry. Accessible from
- * the hub's "Daily" button. Sits alongside Store / Pass in the top bar.
+ * Daily rewards — 7-day escalating login calendar. Returning each day
+ * escalates the reward; missing 2+ days resets the cycle.
  */
 export function DailyScreen(): React.ReactElement {
-  const goToHub = useUI((s) => s.goToHub);
+  const goToMenu = useUI((s) => s.goToMenu);
   const cal = useRetention((s) => s.calendar);
   const idx = useRetention((s) => s.currentCalendarDayIndex(Date.now()));
   const canLogin = useRetention((s) => canClaim(s, Date.now()));
   const claimLogin = useRetention((s) => s.claimDailyLogin);
-  const canBrew = useRetention((s) => s.canClaimBrew(Date.now()));
-  const brew = useRetention((s) => s.brew);
   const addCurrency = useProfile((s) => s.addCurrency);
-
-  const todayLevel = useMemo(
-    () => levelForDay(startOfUTCDay(Date.now())),
-    [],
-  );
 
   const doClaim = () => {
     const grants = claimLogin(Date.now());
     if (!grants) return;
     addCurrency({ coins: grants.coins, gems: grants.gems, embers: grants.embers });
+    sfx('win');
     track('currency_spend', {
       currency: 'coins',
       amount: -(grants.coins ?? 0),
@@ -48,16 +42,16 @@ export function DailyScreen(): React.ReactElement {
       <StatusBar style="light" />
       <View style={styles.header}>
         <View>
-          <Text style={typography.h1}>Daily</Text>
-          <Text style={typography.small}>Return every day.</Text>
+          <Text style={typography.h1}>Daily Rewards</Text>
+          <Text style={typography.small}>Return every night.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={() => goToHub()}>
+        <Pressable style={styles.backBtn} onPress={click(() => goToMenu())}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.sectionTitle}>7-day login</Text>
+        <Text style={styles.sectionTitle}>7-Day Ritual</Text>
         <View style={styles.calendar}>
           {CALENDAR_REWARDS.map((g, i) => {
             const claimed = i < idx || (i === idx && !canLogin);
@@ -84,48 +78,21 @@ export function DailyScreen(): React.ReactElement {
         <Pressable
           style={[styles.claimBtn, !canLogin && styles.disabled]}
           disabled={!canLogin}
-          onPress={doClaim}
+          onPress={click(doClaim)}
         >
           <Text style={styles.claimLabel}>
             {canLogin ? `Claim day ${idx + 1}` : 'Come back tomorrow'}
           </Text>
         </Pressable>
         <Text style={styles.hint}>
-          Completed cycles: {cal.completedCycles}. Miss a day and it resets.
+          Completed cycles: {cal.completedCycles}. Miss a night and the ritual resets.
         </Text>
-
-        <Text style={styles.sectionTitle}>Today's Brew</Text>
-        <View style={styles.brewCard}>
-          <Text style={typography.h2}>{todayLevel.id}</Text>
-          <Text style={typography.small}>
-            {todayLevel.archetype} · same seed for every player today
-          </Text>
-          <Text style={[typography.small, { marginTop: spacing.sm }]}>
-            Win to earn 200🪙 + 15🔥 + 10⭐. Streak: {brew.streak}
-          </Text>
-          <Pressable
-            style={[styles.claimBtn, !canBrew && styles.disabled]}
-            disabled={!canBrew}
-            onPress={() => {
-              // Deep-linking into the actual Daily Brew is deferred; for
-              // now the entry point exists and the reward flow lives in
-              // the retention store. A full "play daily brew" screen is
-              // Phase 6.5 polish.
-            }}
-          >
-            <Text style={styles.claimLabel}>
-              {canBrew ? 'Play Daily Brew' : 'Come back tomorrow'}
-            </Text>
-          </Pressable>
-        </View>
       </ScrollView>
     </View>
   );
 }
 
 function canClaim(s: ReturnType<typeof useRetention.getState>, now: number): boolean {
-  // Wrapper — the store exposes a method, but Zustand selectors want a
-  // plain callback that reads from state, not a bound method.
   const idx = s.currentCalendarDayIndex(now);
   const alreadyToday = startOfUTCDay(s.calendar.lastClaimedAt) === startOfUTCDay(now);
   if (alreadyToday) return false;
@@ -183,11 +150,4 @@ const styles = StyleSheet.create({
   claimLabel: { color: palette.bgDeep, fontWeight: '700' },
   disabled: { opacity: 0.5 },
   hint: { color: palette.parchmentDim, fontSize: 12, marginTop: spacing.sm },
-  brewCard: {
-    backgroundColor: palette.bgSurface,
-    borderColor: palette.border,
-    borderWidth: 1,
-    padding: spacing.md,
-    borderRadius: radii.md,
-  },
 });

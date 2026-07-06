@@ -21,7 +21,6 @@ export interface FeatureFlags {
   /** Phase-6 flags — reserved so callers can share the same struct. */
   dailyLoginCalendar: boolean;
   pushNotifications: boolean;
-  dailyBrew: boolean;
 }
 
 export const DEFAULT_FLAGS: FeatureFlags = {
@@ -39,7 +38,6 @@ export const DEFAULT_FLAGS: FeatureFlags = {
   devDashboard: true,
   dailyLoginCalendar: true,
   pushNotifications: true,
-  dailyBrew: true,
 };
 
 let currentFlags: FeatureFlags = { ...DEFAULT_FLAGS };

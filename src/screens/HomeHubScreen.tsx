@@ -108,8 +108,8 @@ export function HomeHubScreen(): React.ReactElement {
               style={[styles.miniCard, { marginTop: spacing.sm }]}
               onPress={click(goToDaily)}
             >
-              <Text style={styles.miniCardGlyph}>☕</Text>
-              <Text style={styles.miniCardTitle}>Daily{'\n'}Brew</Text>
+              <Text style={styles.miniCardGlyph}>🎁</Text>
+              <Text style={styles.miniCardTitle}>Daily{'\n'}Rewards</Text>
             </Pressable>
           </View>
 
@@ -119,7 +119,7 @@ export function HomeHubScreen(): React.ReactElement {
               <Text style={styles.heroGlyph}>🌙</Text>
             </View>
             <Text style={styles.heroTitle}>
-              {highest === 0 ? 'Ready to brew?' : `Level ${currentLevelIndex + 1}`}
+              {highest === 0 ? 'Ready to begin?' : `Level ${currentLevelIndex + 1}`}
             </Text>
             <Text style={styles.heroSub}>Solo Journey</Text>
 
@@ -146,7 +146,7 @@ export function HomeHubScreen(): React.ReactElement {
         </Pressable>
 
         {!tutorialSeen && highest === 0 && (
-          <Text style={styles.firstHint}>Tap PLAY to begin your first brew.</Text>
+          <Text style={styles.firstHint}>Tap PLAY to start your first level.</Text>
         )}
       </ScrollView>
     </ShellFrame>
@@ -172,7 +172,7 @@ function computeNextUnlock(highest: number): NextUnlock {
     { at: 15, name: 'Battle Pass', glyph: '⭐' },
     { at: 20, name: 'Advanced Recipes', glyph: '🧪' },
     { at: 30, name: 'Legendary Companions', glyph: '👑' },
-    { at: 45, name: 'Master Brewer', glyph: '🏆' },
+    { at: 45, name: 'Master Apothecary', glyph: '🏆' },
     { at: 60, name: 'Grand Cauldron', glyph: '🎃' },
   ];
   const next = MILESTONES.find((m) => highest < m.at) ?? MILESTONES[MILESTONES.length - 1]!;

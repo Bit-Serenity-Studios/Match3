@@ -4,18 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   initCalendar,
   claim as claimCalendar,
-  canClaimToday,
   decayOnMiss,
   currentDayIndex,
   type CalendarState,
 } from '../retention/calendar';
-import {
-  initDailyBrew,
-  claimBrew,
-  canClaimBrew,
-  notePlayed,
-  type DailyBrewState,
-} from '../retention/dailyBrew';
 import {
   MockScheduler,
   planNotifications,
@@ -26,7 +18,7 @@ import {
 import type { Grants } from '../monetization/types';
 
 /**
- * Retention store — daily calendar, daily brew, notification permission.
+ * Retention store — daily login calendar + notification permission.
  * Uses AsyncStorage to persist across restarts. Notification scheduler is
  * a module-level singleton, swappable at boot.
  */
@@ -43,7 +35,6 @@ export function getScheduler(): NotificationScheduler {
 
 export interface RetentionState {
   calendar: CalendarState;
-  brew: DailyBrewState;
 
   notificationPermission: NotificationPermission;
   softAskedAt: number;
@@ -53,10 +44,6 @@ export interface RetentionState {
   refreshCalendar(now: number): void;
   claimDailyLogin(now: number): Grants | null;
   currentCalendarDayIndex(now: number): number;
-
-  canClaimBrew(now: number): boolean;
-  claimDailyBrew(now: number, won: boolean): Grants | null;
-  markBrewPlayed(now: number): void;
 
   registerWowLevelCleared(): void;
   shouldPromptSoftAsk(now: number): boolean;
@@ -77,7 +64,6 @@ export const useRetention = create<RetentionState>()(
   persist(
     (set, get) => ({
       calendar: initCalendar(0),
-      brew: initDailyBrew(),
 
       notificationPermission: 'unknown',
       softAskedAt: 0,
@@ -86,7 +72,6 @@ export const useRetention = create<RetentionState>()(
 
       refreshCalendar(now) {
         const s = get();
-        // On first ever boot, stamp firstLaunchAt so we know not to soft-ask.
         if (s.firstLaunchAt === 0) {
           set({ firstLaunchAt: now, calendar: initCalendar(now) });
           return;
@@ -103,20 +88,6 @@ export const useRetention = create<RetentionState>()(
       },
       currentCalendarDayIndex(now) {
         return currentDayIndex(get().calendar, now);
-      },
-
-      canClaimBrew(now) {
-        return canClaimBrew(get().brew, now);
-      },
-      claimDailyBrew(now, won) {
-        const s = get();
-        const r = claimBrew(s.brew, now, won);
-        if (!r) return null;
-        set({ brew: r.next });
-        return r.grants;
-      },
-      markBrewPlayed(now) {
-        set((s) => ({ brew: notePlayed(s.brew, now) }));
       },
 
       registerWowLevelCleared() {
@@ -151,7 +122,6 @@ export const useRetention = create<RetentionState>()(
       resetRetention() {
         set({
           calendar: initCalendar(0),
-          brew: initDailyBrew(),
           notificationPermission: 'unknown',
           softAskedAt: 0,
           firstLaunchAt: 0,
@@ -160,7 +130,7 @@ export const useRetention = create<RetentionState>()(
       },
     }),
     {
-      name: 'moonpetal.retention.v1',
+      name: 'moonpetal.retention.v2',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),
