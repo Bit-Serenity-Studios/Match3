@@ -1118,19 +1118,67 @@
     go(btn.dataset.nav);
   });
   document.querySelector('.avatar').addEventListener("click", () => go("profile"));
-  document.getElementById("burger").addEventListener("click", () => {
-    flashToast("Menu · Profile · Friends · Settings…");
-  });
+  document.getElementById("burger").addEventListener("click", openBurgerMenu);
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
   // ── theme toggle ─────────────────────────────────────────────────────────
-  document.getElementById("themeBtn").addEventListener("click", () => {
+  function toggleTheme() {
     const cur = document.documentElement.getAttribute("data-theme");
     const sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const now = cur || (sysDark ? "dark" : "light");
     document.documentElement.setAttribute("data-theme", now === "dark" ? "light" : "dark");
-  });
+  }
+  const themeBtnEl = document.getElementById("themeBtn");
+  if (themeBtnEl) themeBtnEl.addEventListener("click", toggleTheme);
+
+  // ── top-right menu (real, tappable dropdown) ─────────────────────────────
+  const MENU_ITEMS = [
+    ["👤", "Profile", () => go("profile")],
+    ["🏪", "Market", () => go("store")],
+    ["⚔️", "Moonrise Duel", () => go("moonrise")],
+    ["🐾", "Covens", () => go("covens")],
+    ["📖", "Grimoire", () => go("grimoire")],
+    ["🌗", "Toggle theme", toggleTheme],
+  ];
+  let menuEl = null;
+  function onOutsideMenu(e) {
+    if (!menuEl) return;
+    if (menuEl.contains(e.target) || e.target.id === "burger") return;
+    closeBurgerMenu();
+  }
+  function closeBurgerMenu() {
+    if (!menuEl) return;
+    menuEl.remove();
+    menuEl = null;
+    document.removeEventListener("pointerdown", onOutsideMenu, true);
+  }
+  function openBurgerMenu() {
+    if (menuEl) { closeBurgerMenu(); return; }
+    const scr = document.getElementById("screen");
+    menuEl = document.createElement("div");
+    menuEl.style.cssText =
+      "position:absolute;top:56px;right:10px;z-index:80;min-width:186px;background:var(--bg-surface);" +
+      "border:1px solid var(--candle-soft);border-radius:14px;padding:6px;box-shadow:0 12px 34px rgba(0,0,0,.55)";
+    menuEl.innerHTML =
+      '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--parch-dim);padding:8px 10px 6px">Menu</div>' +
+      MENU_ITEMS.map((it, i) =>
+        `<button data-mi="${i}" style="display:flex;align-items:center;gap:10px;width:100%;background:transparent;` +
+        `border:0;color:var(--parch);font:inherit;font-size:15px;font-weight:600;text-align:left;padding:11px 10px;` +
+        `border-radius:9px;cursor:pointer">` +
+        `<span style="font-size:18px;width:22px;display:inline-block;text-align:center">${it[0]}</span>${it[1]}</button>`
+      ).join("");
+    scr.appendChild(menuEl);
+    menuEl.querySelectorAll("button[data-mi]").forEach((b) => {
+      b.onclick = () => {
+        const idx = +b.dataset.mi;
+        closeBurgerMenu();
+        MENU_ITEMS[idx][2]();
+      };
+    });
+    // defer so the tap that opened the menu doesn't immediately close it
+    setTimeout(() => document.addEventListener("pointerdown", onOutsideMenu, true), 0);
+  }
 
   // boot
   syncHud();
