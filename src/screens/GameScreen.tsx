@@ -85,6 +85,7 @@ export function GameScreen() {
   const equippedId = useProfile((s) => s.equippedCompanionId);
   const owned = useProfile((s) => s.ownedCompanions);
   const goToHub = useUI((s) => s.goToHub);
+  const goToHome = useUI((s) => s.goToHome);
   const goToStore = useUI((s) => s.goToStore);
   const goToMenu = useUI((s) => s.goToMenu);
   const tutorialSeen = useProfile((s) => s.tutorialSeen);
@@ -281,8 +282,8 @@ export function GameScreen() {
 
   const onNext = useCallback(() => {
     advanceLevel();
-    if (highestUnlocked >= UNLOCK_HUB_AT) goToHub();
-  }, [advanceLevel, highestUnlocked, goToHub]);
+    if (highestUnlocked >= UNLOCK_HUB_AT) goToHome();
+  }, [advanceLevel, highestUnlocked, goToHome]);
 
   const onRetry = useCallback(() => {
     setState(initialState(tunedLevel, consecutiveFails[tunedLevel.id] ?? 0));

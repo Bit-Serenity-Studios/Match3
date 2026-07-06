@@ -10,7 +10,7 @@ import { useUI } from '../state/ui';
  * as the player progresses — Hub only appears once level 4 is cleared.
  */
 export function MenuScreen(): React.ReactElement {
-  const goToGame = useUI((s) => s.goToGame);
+  const goToHome = useUI((s) => s.goToHome);
   const goToHub = useUI((s) => s.goToHub);
   const goToStore = useUI((s) => s.goToStore);
   const goToPrivacy = useUI((s) => s.goToPrivacy);
@@ -25,6 +25,8 @@ export function MenuScreen(): React.ReactElement {
     [highestUnlocked, currentLevelIndex],
   );
 
+  const enter = goToHome;
+
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
@@ -37,24 +39,11 @@ export function MenuScreen(): React.ReactElement {
       </Text>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Pressable style={[styles.primaryBtn]} onPress={goToGame}>
+        <Pressable style={[styles.primaryBtn]} onPress={enter}>
           <Text style={styles.primaryLabel}>
-            {isReturning
-              ? `Continue · Level ${currentLevelIndex + 1}`
-              : 'Play'}
+            {isReturning ? 'Continue' : 'Play'}
           </Text>
         </Pressable>
-
-        {hubUnlocked && (
-          <Pressable style={styles.secondaryBtn} onPress={() => goToHub()}>
-            <Text style={styles.secondaryLabel}>Apothecary Hub</Text>
-          </Pressable>
-        )}
-        {hubUnlocked && (
-          <Pressable style={styles.secondaryBtn} onPress={goToStore}>
-            <Text style={styles.secondaryLabel}>Store</Text>
-          </Pressable>
-        )}
 
         <Pressable style={styles.secondaryBtn} onPress={goToSettings}>
           <Text style={styles.secondaryLabel}>Settings</Text>

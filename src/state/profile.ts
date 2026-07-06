@@ -52,13 +52,19 @@ export interface ProfileState {
 
   // First-run flags
   tutorialSeen: boolean;
+  tosAcceptedAt: number; // 0 = not accepted
   soundEnabled: boolean;
   hapticsEnabled: boolean;
 
+  // Competitive rank (online mode). Starts at 0, gates online unlocks.
+  moonstones: number;
+
   // Actions
   markTutorialSeen(): void;
+  acceptTos(now: number): void;
   setSoundEnabled(v: boolean): void;
   setHapticsEnabled(v: boolean): void;
+  awardMoonstones(delta: number): void;
 
   registerWin(levelId: string, rewards: LevelRewards): void;
   registerLoss(levelId: string): void;
@@ -101,6 +107,11 @@ export const UNLOCK_HUB_AT = 3; // 0-based → level 4 (index 3)
 export const UNLOCK_COMPANIONS_AT = 6;
 export const UNLOCK_EXPEDITIONS_AT = 9;
 
+/** Online mode unlock thresholds (moonstones). */
+export const UNLOCK_COVENS_AT_MOONSTONES = 550;
+export const UNLOCK_MOONRISE_AT_MOONSTONES = 800;
+export const UNLOCK_GRIMOIRE_AT_MOONSTONES = 200;
+
 export const useProfile = create<ProfileState>()(
   persist(
     (set, get) => ({
@@ -116,17 +127,25 @@ export const useProfile = create<ProfileState>()(
       activeExpeditions: [],
       fixtureLevels: {},
       tutorialSeen: false,
+      tosAcceptedAt: 0,
       soundEnabled: true,
       hapticsEnabled: true,
+      moonstones: 0,
 
       markTutorialSeen() {
         set({ tutorialSeen: true });
+      },
+      acceptTos(now) {
+        set({ tosAcceptedAt: now });
       },
       setSoundEnabled(v) {
         set({ soundEnabled: v });
       },
       setHapticsEnabled(v) {
         set({ hapticsEnabled: v });
+      },
+      awardMoonstones(delta) {
+        set((s) => ({ moonstones: Math.max(0, s.moonstones + delta) }));
       },
 
       registerWin(levelId, rewards) {
@@ -182,6 +201,7 @@ export const useProfile = create<ProfileState>()(
           activeExpeditions: [],
           fixtureLevels: {},
           tutorialSeen: false,
+          moonstones: 0,
         });
       },
 

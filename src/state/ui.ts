@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export type Screen =
   | 'menu'
+  | 'home'
   | 'game'
   | 'hub'
   | 'store'
@@ -10,7 +11,10 @@ export type Screen =
   | 'daily'
   | 'privacy'
   | 'about'
-  | 'settings';
+  | 'settings'
+  | 'moonrise'
+  | 'covens'
+  | 'grimoire';
 export type HubTab = 'fixtures' | 'companions' | 'expeditions';
 
 interface UIState {
@@ -27,9 +31,13 @@ interface UIState {
   goToDevDashboard(): void;
   goToDaily(): void;
   goToMenu(): void;
+  goToHome(): void;
   goToPrivacy(): void;
   goToAbout(): void;
   goToSettings(): void;
+  goToMoonrise(): void;
+  goToCovens(): void;
+  goToGrimoire(): void;
   setHubTab(t: HubTab): void;
   openContinue(): void;
   closeContinue(): void;
@@ -55,9 +63,13 @@ export const useUI = create<UIState>((set) => ({
   goToDevDashboard: () => set({ screen: 'devDashboard' }),
   goToDaily: () => set({ screen: 'daily' }),
   goToMenu: () => set({ screen: 'menu', continueOpen: false }),
+  goToHome: () => set({ screen: 'home', continueOpen: false }),
   goToPrivacy: () => set({ screen: 'privacy' }),
   goToAbout: () => set({ screen: 'about' }),
   goToSettings: () => set({ screen: 'settings' }),
+  goToMoonrise: () => set({ screen: 'moonrise' }),
+  goToCovens: () => set({ screen: 'covens' }),
+  goToGrimoire: () => set({ screen: 'grimoire' }),
   setHubTab: (t) => set({ hubTab: t }),
   openContinue: () => set({ continueOpen: true }),
   closeContinue: () => set({ continueOpen: false }),
