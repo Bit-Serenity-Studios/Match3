@@ -663,6 +663,36 @@
     document.getElementById("hudLvl").textContent = Math.max(1, Math.floor((app.level - 1)) + 1);
   }
 
+  // ── DAILY REWARD (24h cooldown, persisted across reloads) ───────────────
+  const DAILY_KEY = "moonpetal.preview.dailyClaimedAt";
+  const DAILY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+  const DAILY_AMOUNT = 60;
+  function dailyLastClaimedAt() {
+    const v = parseInt(localStorage.getItem(DAILY_KEY) || "0", 10);
+    return Number.isFinite(v) ? v : 0;
+  }
+  function dailyRemainingMs(now) {
+    return Math.max(0, dailyLastClaimedAt() + DAILY_COOLDOWN_MS - now);
+  }
+  function fmtCountdown(ms) {
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    if (h > 0) return `${h}h ${m}m`;
+    const s = Math.floor((ms % 60000) / 1000);
+    return m > 0 ? `${m}m` : `${s}s`;
+  }
+  function claimDaily() {
+    const now = Date.now();
+    const remaining = dailyRemainingMs(now);
+    if (remaining > 0) {
+      flashToast(`Already claimed — back in ${fmtCountdown(remaining)}`);
+      return;
+    }
+    try { localStorage.setItem(DAILY_KEY, String(now)); } catch (e) {}
+    flashToast(`Daily reward claimed! +${DAILY_AMOUNT}🪙`, () => { app.coins += DAILY_AMOUNT; syncHud(); });
+    renderHome(); // refresh the tile into its cooled-down state
+  }
+
   // ── HOME ────────────────────────────────────────────────────────────────
   const MILESTONES = [
     [3, "Apothecary Hub", "🏛️"], [6, "Companions", "🐾"], [9, "Expeditions", "🗺️"],
@@ -677,6 +707,7 @@
     for (const m of MILESTONES) { if (m[0] <= cleared) prevAt = m[0]; }
     const pct = Math.max(0, Math.min(1, (cleared - prevAt) / (next[0] - prevAt)));
     const remain = Math.max(0, next[0] - cleared);
+    const dailyReady = dailyRemainingMs(Date.now()) === 0;
     bodyRoot.innerHTML = `
       <div class="view home">
         <div class="unlock">
@@ -690,7 +721,7 @@
         <div class="stagebox">
           <div class="minis">
             <div class="mini" data-act="tutorial"><div class="mg">📜</div><div class="ml">Learn the<br>Basics</div></div>
-            <div class="mini" data-act="daily"><div class="mg">🎁</div><div class="ml">Daily<br>Rewards</div></div>
+            <div class="mini" data-act="daily" style="${dailyReady ? '' : 'opacity:.55'}"><div class="mg">🎁</div><div class="ml">${dailyReady ? 'Daily<br>Rewards' : 'Claimed<br>✓'}</div></div>
           </div>
           <div class="center">
             <div class="crest">🌙</div>
@@ -710,7 +741,7 @@
       </div>`;
     bodyRoot.querySelector('[data-act="play"]').onclick = startGame;
     bodyRoot.querySelector('[data-act="tutorial"]').onclick = startGame;
-    bodyRoot.querySelector('[data-act="daily"]').onclick = () => flashToast("Daily reward claimed! +60🪙", () => { app.coins += 60; syncHud(); });
+    bodyRoot.querySelector('[data-act="daily"]').onclick = claimDaily;
     bodyRoot.querySelector('[data-nav="moonrise"]').onclick = () => go("moonrise");
   }
 
