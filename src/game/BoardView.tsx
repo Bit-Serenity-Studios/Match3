@@ -6,6 +6,7 @@ import type { BoardSnapshot, CellPos, Tile } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
 import { palette } from '../theme';
 import { getTile, idx, isPlayable } from '../engine/board';
+import { useProfile } from '../state/profile';
 
 interface Props {
   board: BoardSnapshot;

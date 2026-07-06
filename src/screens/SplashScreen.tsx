@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii } from '../theme';
+import { useProfile } from '../state/profile';
 
 interface Props {
   onDone(): void;
@@ -36,6 +37,13 @@ const DECORATIONS: Array<{ glyph: string; x: number; y: number }> = [
 ];
 
 export function SplashScreen({ onDone }: Props): React.ReactElement {
+  const reduceMotion = useProfile.getState().reduceMotion;
+  useEffect(() => {
+    if (reduceMotion) {
+      const id = setTimeout(onDone, 40);
+      return () => clearTimeout(id);
+    }
+  }, [reduceMotion, onDone]);
   const [pct, setPct] = useState(0);
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;

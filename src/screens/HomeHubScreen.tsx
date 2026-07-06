@@ -41,9 +41,14 @@ export function HomeHubScreen(): React.ReactElement {
 
   const nextUnlock = useMemo(() => computeNextUnlock(highest), [highest]);
 
+  const reduceMotion = useProfile((s) => s.reduceMotion);
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    Animated.loop(
+    if (reduceMotion) {
+      pulse.setValue(1);
+      return;
+    }
+    const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1.05,
@@ -58,8 +63,10 @@ export function HomeHubScreen(): React.ReactElement {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
-  }, [pulse]);
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [pulse, reduceMotion]);
 
   const startBasics = () => {
     setTutorialSeen(false);

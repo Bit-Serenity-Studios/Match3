@@ -185,7 +185,8 @@ export function GameScreen() {
       // Animate the swap glide over the CURRENT board, then commit the
       // engine's result state so the cascade appears at once with a flash.
       sfx('swap');
-      setPendingSwap([a, b]);
+      const glideMs = useProfile.getState().reduceMotion ? 0 : 220;
+      if (glideMs > 0) setPendingSwap([a, b]);
       setTimeout(() => {
         setPendingSwap(null);
         setFlash((f) => f + Math.min(cascades + 1, 4));
@@ -278,7 +279,7 @@ export function GameScreen() {
             });
           }
         }
-      }, 220);
+      }, glideMs);
     },
     [
       state,

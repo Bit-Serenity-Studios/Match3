@@ -23,6 +23,7 @@ import { useTelemetry } from './src/telemetry/logger';
 import { useRetention } from './src/state/retention';
 import { useProfile } from './src/state/profile';
 import { initSoundEngine, sfx } from './src/audio/soundEffects';
+import { initMusic, refreshMusicFromProfile } from './src/audio/musicPlayer';
 
 const APP_VERSION = '0.5.0';
 
@@ -39,8 +40,13 @@ export default function App(): React.ReactElement {
     startSession(Date.now(), APP_VERSION);
     refreshCalendar(Date.now());
     initSoundEngine().then(() => sfx('splash'));
+    initMusic();
+    // Watch the profile for any audio toggle change and reconcile the
+    // music player. Music volume + enabled flag both live in the profile.
+    const unsub = useProfile.subscribe(refreshMusicFromProfile);
     return () => {
       endSession(Date.now());
+      unsub();
     };
   }, [startSession, endSession, refreshCalendar]);
 

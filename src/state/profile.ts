@@ -55,8 +55,23 @@ export interface ProfileState {
   /** True once the player clears the last authored tutorial-archetype level. */
   tutorialLevelsCleared: boolean;
   tosAcceptedAt: number; // 0 = not accepted
-  soundEnabled: boolean;
+
+  // Audio
+  soundEnabled: boolean; // legacy alias — kept for compatibility with sfx()
+  sfxEnabled: boolean;
+  sfxVolume: number; // 0..1
+  musicEnabled: boolean;
+  musicVolume: number; // 0..1
+
+  // Feedback
   hapticsEnabled: boolean;
+
+  // Accessibility
+  reduceMotion: boolean;
+  largerText: boolean;
+  largerTapTargets: boolean;
+  highContrast: boolean;
+  colorblindMode: 'off' | 'deuteranopia' | 'protanopia' | 'tritanopia';
 
   // Competitive rank (online mode). Starts at 0, gates online unlocks.
   moonstones: number;
@@ -66,7 +81,16 @@ export interface ProfileState {
   markTutorialLevelsCleared(): void;
   acceptTos(now: number): void;
   setSoundEnabled(v: boolean): void;
+  setSfxEnabled(v: boolean): void;
+  setSfxVolume(v: number): void;
+  setMusicEnabled(v: boolean): void;
+  setMusicVolume(v: number): void;
   setHapticsEnabled(v: boolean): void;
+  setReduceMotion(v: boolean): void;
+  setLargerText(v: boolean): void;
+  setLargerTapTargets(v: boolean): void;
+  setHighContrast(v: boolean): void;
+  setColorblindMode(m: ProfileState['colorblindMode']): void;
   awardMoonstones(delta: number): void;
 
   registerWin(levelId: string, rewards: LevelRewards): void;
@@ -133,7 +157,16 @@ export const useProfile = create<ProfileState>()(
       tutorialLevelsCleared: false,
       tosAcceptedAt: 0,
       soundEnabled: true,
+      sfxEnabled: true,
+      sfxVolume: 0.7,
+      musicEnabled: true,
+      musicVolume: 0.4,
       hapticsEnabled: true,
+      reduceMotion: false,
+      largerText: false,
+      largerTapTargets: false,
+      highContrast: false,
+      colorblindMode: 'off' as const,
       moonstones: 0,
 
       markTutorialSeen() {
@@ -146,10 +179,37 @@ export const useProfile = create<ProfileState>()(
         set({ tosAcceptedAt: now });
       },
       setSoundEnabled(v) {
-        set({ soundEnabled: v });
+        set({ soundEnabled: v, sfxEnabled: v });
+      },
+      setSfxEnabled(v) {
+        set({ sfxEnabled: v, soundEnabled: v });
+      },
+      setSfxVolume(v) {
+        set({ sfxVolume: Math.max(0, Math.min(1, v)) });
+      },
+      setMusicEnabled(v) {
+        set({ musicEnabled: v });
+      },
+      setMusicVolume(v) {
+        set({ musicVolume: Math.max(0, Math.min(1, v)) });
       },
       setHapticsEnabled(v) {
         set({ hapticsEnabled: v });
+      },
+      setReduceMotion(v) {
+        set({ reduceMotion: v });
+      },
+      setLargerText(v) {
+        set({ largerText: v });
+      },
+      setLargerTapTargets(v) {
+        set({ largerTapTargets: v });
+      },
+      setHighContrast(v) {
+        set({ highContrast: v });
+      },
+      setColorblindMode(m) {
+        set({ colorblindMode: m });
       },
       awardMoonstones(delta) {
         set((s) => ({ moonstones: Math.max(0, s.moonstones + delta) }));

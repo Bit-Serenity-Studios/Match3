@@ -67,9 +67,13 @@ export function initSoundEngine(): Promise<void> {
  *  players are ready. */
 export function sfx(id: SoundId): void {
   try {
-    if (!useProfile.getState().soundEnabled) return;
+    const s = useProfile.getState();
+    if (!s.sfxEnabled) return;
     const p = players.get(id);
     if (!p) return;
+    try {
+      p.volume = s.sfxVolume;
+    } catch {}
     p.seekTo(0);
     p.play();
   } catch {
