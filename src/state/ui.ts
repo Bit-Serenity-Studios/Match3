@@ -14,16 +14,23 @@ export type Screen =
   | 'settings'
   | 'moonrise'
   | 'covens'
-  | 'grimoire';
+  | 'grimoire'
+  | 'profile'
+  | 'friends'
+  | 'leaderboards'
+  | 'news'
+  | 'joinUs'
+  | 'connectAccount'
+  | 'support';
 export type HubTab = 'fixtures' | 'companions' | 'expeditions';
 
 interface UIState {
   screen: Screen;
   hubTab: HubTab;
-  /** Ephemeral: the continue-screen overlay is showing on the game screen. */
   continueOpen: boolean;
-  /** Ephemeral: a segmented offer awaits inspection on the game screen. */
   pendingOfferSku: string | null;
+  /** Ephemeral: the floating hamburger dropdown is open. */
+  headerMenuOpen: boolean;
   goToGame(): void;
   goToHub(tab?: HubTab): void;
   goToStore(): void;
@@ -38,41 +45,63 @@ interface UIState {
   goToMoonrise(): void;
   goToCovens(): void;
   goToGrimoire(): void;
+  goToProfile(): void;
+  goToFriends(): void;
+  goToLeaderboards(): void;
+  goToNews(): void;
+  goToJoinUs(): void;
+  goToConnectAccount(): void;
+  goToSupport(): void;
   setHubTab(t: HubTab): void;
   openContinue(): void;
   closeContinue(): void;
   showOffer(sku: string): void;
   clearOffer(): void;
+  openHeaderMenu(): void;
+  closeHeaderMenu(): void;
 }
 
 /**
- * Ephemeral (non-persisted) UI navigation state. Screen and hub tab live
- * separately from the persistent profile so a fresh app launch always drops
- * the player on the game screen (frictionless onboarding per the brief).
+ * Ephemeral (non-persisted) UI navigation state.
  */
 export const useUI = create<UIState>((set) => ({
   screen: 'menu',
   hubTab: 'fixtures',
   continueOpen: false,
   pendingOfferSku: null,
-  goToGame: () => set({ screen: 'game', continueOpen: false }),
+  headerMenuOpen: false,
+  goToGame: () => set({ screen: 'game', continueOpen: false, headerMenuOpen: false }),
   goToHub: (tab) =>
-    set((s) => ({ screen: 'hub', hubTab: tab ?? s.hubTab, continueOpen: false })),
-  goToStore: () => set({ screen: 'store' }),
-  goToPass: () => set({ screen: 'pass' }),
-  goToDevDashboard: () => set({ screen: 'devDashboard' }),
-  goToDaily: () => set({ screen: 'daily' }),
-  goToMenu: () => set({ screen: 'menu', continueOpen: false }),
-  goToHome: () => set({ screen: 'home', continueOpen: false }),
-  goToPrivacy: () => set({ screen: 'privacy' }),
-  goToAbout: () => set({ screen: 'about' }),
-  goToSettings: () => set({ screen: 'settings' }),
-  goToMoonrise: () => set({ screen: 'moonrise' }),
-  goToCovens: () => set({ screen: 'covens' }),
-  goToGrimoire: () => set({ screen: 'grimoire' }),
+    set((s) => ({
+      screen: 'hub',
+      hubTab: tab ?? s.hubTab,
+      continueOpen: false,
+      headerMenuOpen: false,
+    })),
+  goToStore: () => set({ screen: 'store', headerMenuOpen: false }),
+  goToPass: () => set({ screen: 'pass', headerMenuOpen: false }),
+  goToDevDashboard: () => set({ screen: 'devDashboard', headerMenuOpen: false }),
+  goToDaily: () => set({ screen: 'daily', headerMenuOpen: false }),
+  goToMenu: () => set({ screen: 'menu', continueOpen: false, headerMenuOpen: false }),
+  goToHome: () => set({ screen: 'home', continueOpen: false, headerMenuOpen: false }),
+  goToPrivacy: () => set({ screen: 'privacy', headerMenuOpen: false }),
+  goToAbout: () => set({ screen: 'about', headerMenuOpen: false }),
+  goToSettings: () => set({ screen: 'settings', headerMenuOpen: false }),
+  goToMoonrise: () => set({ screen: 'moonrise', headerMenuOpen: false }),
+  goToCovens: () => set({ screen: 'covens', headerMenuOpen: false }),
+  goToGrimoire: () => set({ screen: 'grimoire', headerMenuOpen: false }),
+  goToProfile: () => set({ screen: 'profile', headerMenuOpen: false }),
+  goToFriends: () => set({ screen: 'friends', headerMenuOpen: false }),
+  goToLeaderboards: () => set({ screen: 'leaderboards', headerMenuOpen: false }),
+  goToNews: () => set({ screen: 'news', headerMenuOpen: false }),
+  goToJoinUs: () => set({ screen: 'joinUs', headerMenuOpen: false }),
+  goToConnectAccount: () => set({ screen: 'connectAccount', headerMenuOpen: false }),
+  goToSupport: () => set({ screen: 'support', headerMenuOpen: false }),
   setHubTab: (t) => set({ hubTab: t }),
   openContinue: () => set({ continueOpen: true }),
   closeContinue: () => set({ continueOpen: false }),
   showOffer: (sku) => set({ pendingOfferSku: sku }),
   clearOffer: () => set({ pendingOfferSku: null }),
+  openHeaderMenu: () => set({ headerMenuOpen: true }),
+  closeHeaderMenu: () => set({ headerMenuOpen: false }),
 }));

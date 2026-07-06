@@ -16,13 +16,14 @@ export function TopHud(): React.ReactElement {
   const moonstones = useProfile((s) => s.moonstones);
   const coins = useProfile((s) => s.coins);
   const gems = useProfile((s) => s.gems);
-  const goToMenu = useUI((s) => s.goToMenu);
+  const goToProfile = useUI((s) => s.goToProfile);
+  const openHeaderMenu = useUI((s) => s.openHeaderMenu);
 
   const level = Math.max(1, Math.floor(highest / 3) + 1);
 
   return (
     <View style={styles.root}>
-      <Pressable style={styles.avatar} onPress={click(goToMenu)}>
+      <Pressable style={styles.avatar} onPress={click(goToProfile)}>
         <Text style={styles.avatarGlyph}>🌙</Text>
         <View style={styles.avatarBadge}>
           <Text style={styles.avatarBadgeText}>{level}</Text>
@@ -33,7 +34,7 @@ export function TopHud(): React.ReactElement {
       <Chip glyph="🪙" value={fmt(coins)} tint={palette.candlelight} />
       <Chip glyph="⭐" value={fmt(gems)} tint={palette.purple} />
 
-      <Pressable style={styles.menuBtn} onPress={click(goToMenu)}>
+      <Pressable style={styles.menuBtn} onPress={click(openHeaderMenu)}>
         <Text style={styles.menuGlyph}>≡</Text>
       </Pressable>
     </View>

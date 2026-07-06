@@ -15,6 +15,8 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { MoonriseScreen } from './src/screens/MoonriseScreen';
 import { CovensScreen } from './src/screens/CovensScreen';
 import { GrimoireScreen } from './src/screens/GrimoireScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
+import { PlaceholderScreen } from './src/screens/PlaceholderScreen';
 import { TosModal } from './src/screens/TosModal';
 import { useUI } from './src/state/ui';
 import { useTelemetry } from './src/telemetry/logger';
@@ -30,6 +32,7 @@ export default function App(): React.ReactElement {
   const endSession = useTelemetry((s) => s.endSession);
   const refreshCalendar = useRetention((s) => s.refreshCalendar);
   const tosAcceptedAt = useProfile((s) => s.tosAcceptedAt);
+  const goToHome = useUI((s) => s.goToHome);
   const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
@@ -41,8 +44,6 @@ export default function App(): React.ReactElement {
     };
   }, [startSession, endSession, refreshCalendar]);
 
-  // Gate every playable surface behind TOS acceptance. Only the Privacy
-  // Policy screen is reachable pre-accept so players can review it.
   const needsTos = tosAcceptedAt === 0 && screen !== 'privacy';
 
   return (
@@ -77,6 +78,81 @@ export default function App(): React.ReactElement {
         <CovensScreen />
       ) : screen === 'grimoire' ? (
         <GrimoireScreen />
+      ) : screen === 'profile' ? (
+        <ProfileScreen />
+      ) : screen === 'friends' ? (
+        <PlaceholderScreen
+          title="Friends"
+          glyph="🐾"
+          blurb="Find brewers in your circle, share ingredients, and keep tabs on each other's Moonrise duels."
+          bullets={[
+            'Add friends by moonpetal code',
+            'See who has today\'s highest brew',
+            'Gift stars when the moon is full',
+            'Private duel invites',
+          ]}
+        />
+      ) : screen === 'leaderboards' ? (
+        <PlaceholderScreen
+          title="Leaderboards"
+          glyph="🏆"
+          blurb="Weekly and all-time rankings by moonstones. Compete against covens across the garden."
+          bullets={[
+            'Global weekly rank',
+            'Coven leaderboards',
+            'Friends-only board',
+            'Season-end reward tiers',
+          ]}
+        />
+      ) : screen === 'news' ? (
+        <PlaceholderScreen
+          title="News"
+          glyph="📰"
+          blurb="Fresh moon phases, seasonal events, and patch notes from the apothecary."
+          bullets={[
+            'Feature announcements',
+            'Event schedules',
+            'Balance updates',
+            'Community moments',
+          ]}
+        />
+      ) : screen === 'joinUs' ? (
+        <PlaceholderScreen
+          title="Join Us"
+          glyph="💌"
+          blurb="The moonpetal garden grows by lantern light. Come sit at the fire — we're hiring, testing, and swapping recipes."
+          bullets={[
+            'Discord for players and testers',
+            'Careers at Bit Serenity Studios',
+            'Bug bounty for the sharp-eyed',
+            'Playtest sign-ups',
+          ]}
+        />
+      ) : screen === 'connectAccount' ? (
+        <PlaceholderScreen
+          title="Connect Account"
+          glyph="🔗"
+          blurb="Sign in to sync your progress across devices and back up your currency and companions safely."
+          bullets={[
+            'Sign in with Apple',
+            'Sign in with Google',
+            'Restore progress on a new device',
+            'Merge two devices into one profile',
+          ]}
+        />
+      ) : screen === 'support' ? (
+        <PlaceholderScreen
+          title="Support"
+          glyph="🛟"
+          blurb="Something amiss with the cauldron? Send us a note and the moon will answer."
+          bullets={[
+            'support@bitserenity.studio',
+            'Bug reports with save-file attach',
+            'IAP restore and receipt help',
+            'FAQ and known issues',
+          ]}
+          cta={{ label: 'Contact', onPress: goToHome }}
+        />
       ) : (
         <GameScreen />
       )}
