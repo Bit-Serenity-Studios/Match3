@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet, PanResponder, GestureResponderEvent } from 'react-native';
+import React, { useMemo, useRef } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Canvas, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
 import type { BoardSnapshot, CellPos } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
@@ -31,29 +32,36 @@ export function BoardView({ board, size, onSwap, highlight, flash = 0 }: Props) 
   const cellSize = size / Math.max(board.width, board.height);
   const boardPx = cellSize * board.width;
 
-  const panResponder = useMemo(
+  // Start row/col captured on gesture begin so we know the origin cell
+  // regardless of how far the finger travels before release.
+  const startRef = useRef<CellPos | null>(null);
+
+  const panGesture = useMemo(
     () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, g) =>
-          Math.abs(g.dx) + Math.abs(g.dy) > 4,
-        onPanResponderRelease: (evt: GestureResponderEvent, g) => {
-          const { locationX, locationY } = evt.nativeEvent;
-          const startCol = Math.floor((locationX - g.dx) / cellSize);
-          const startRow = Math.floor((locationY - g.dy) / cellSize);
-          if (!isPlayable(board, { row: startRow, col: startCol })) return;
-          const adx = Math.abs(g.dx);
-          const ady = Math.abs(g.dy);
+      Gesture.Pan()
+        .runOnJS(true)
+        .minDistance(4)
+        .onBegin((e) => {
+          const col = Math.floor(e.x / cellSize);
+          const row = Math.floor(e.y / cellSize);
+          startRef.current = { row, col };
+        })
+        .onEnd((e) => {
+          const start = startRef.current;
+          startRef.current = null;
+          if (!start) return;
+          if (!isPlayable(board, start)) return;
+          const adx = Math.abs(e.translationX);
+          const ady = Math.abs(e.translationY);
           if (adx + ady < cellSize * 0.35) return;
           let dr = 0;
           let dc = 0;
-          if (adx > ady) dc = g.dx > 0 ? 1 : -1;
-          else dr = g.dy > 0 ? 1 : -1;
-          const target = { row: startRow + dr, col: startCol + dc };
+          if (adx > ady) dc = e.translationX > 0 ? 1 : -1;
+          else dr = e.translationY > 0 ? 1 : -1;
+          const target = { row: start.row + dr, col: start.col + dc };
           if (!isPlayable(board, target)) return;
-          onSwap({ row: startRow, col: startCol }, target);
-        },
-      }),
+          onSwap(start, target);
+        }),
     [board, cellSize, onSwap],
   );
 
@@ -64,10 +72,11 @@ export function BoardView({ board, size, onSwap, highlight, flash = 0 }: Props) 
   const shake = (flash % 2) * 2 - 1;
 
   return (
-    <View
-      style={[styles.wrap, { width: boardPx, height: boardPx, transform: [{ translateX: shake }] }]}
-      {...panResponder.panHandlers}
-    >
+    <GestureDetector gesture={panGesture}>
+      <View
+        collapsable={false}
+        style={[styles.wrap, { width: boardPx, height: boardPx, transform: [{ translateX: shake }] }]}
+      >
       <Canvas style={{ width: boardPx, height: boardPx }}>
         <Rect x={0} y={0} width={boardPx} height={boardPx} color={palette.bgSurface2} />
         {rangeCells(board).map(({ row, col, i }) => {
@@ -141,7 +150,8 @@ export function BoardView({ board, size, onSwap, highlight, flash = 0 }: Props) 
           );
         })}
       </Canvas>
-    </View>
+      </View>
+    </GestureDetector>
   );
 }
 
