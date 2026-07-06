@@ -361,6 +361,16 @@
     border-radius: 12px;
     touch-action: none;
   }
+  .board.flash { animation: boardflash .38s ease; }
+  @keyframes boardflash {
+    0%, 100% { box-shadow: none; }
+    40% { box-shadow: 0 0 0 3px var(--candle), 0 0 36px 8px rgba(230,178,90,.55); }
+  }
+  .phint {
+    text-align: center; font-size: 11px; color: var(--parch-dim);
+    margin: 2px 0 6px;
+  }
+  .phint b { color: var(--candle); }
   .tile {
     position: absolute;
     display: grid; place-items: center;
@@ -828,6 +838,7 @@
             <div class="stat"><div class="sl">Moves</div><div class="sv" id="mvs">${app.moves}</div></div>
             <div class="stat obj"><div class="sl">Objective</div><div class="sv" id="objv">${cap(app.targetColor)} ${app.collected}/${app.target}</div></div>
           </div>
+          <div class="phint">Match <b>4</b> for a ⚡ power-up · <b>5+</b> for a 🌟 color nova</div>
           <div class="board-wrap">
             <div class="board" id="board" style="width:${boardW}px;height:${boardH}px">
               <div class="toast" id="toast"></div>
@@ -917,7 +928,7 @@
     app.busy = true;
     swapCells(r1, c1, r2, c2);
     place(a, r2, c2); place(b, r1, c1);
-    const matches = findMatches();
+    const matches = findMatches().hits;
     if (matches.size === 0) {
       // invalid — wobble + swap back
       setTimeout(() => {
@@ -935,29 +946,75 @@
 
   function findMatches() {
     const hits = new Set();
+    const powerups = []; // runs of 4+ spawn a blast
+    // horizontal runs
     for (let r = 0; r < H; r++) {
       let run = 1;
       for (let c = 1; c <= W; c++) {
         const same = c < W && app.grid[r][c] && app.grid[r][c - 1] && app.grid[r][c].color === app.grid[r][c - 1].color;
         if (same) run++;
-        else { if (run >= 3) for (let k = c - run; k < c; k++) hits.add(r + "," + k); run = 1; }
+        else {
+          if (run >= 3) {
+            for (let k = c - run; k < c; k++) hits.add(r + "," + k);
+            if (run >= 4) powerups.push({ type: run >= 5 ? "nova" : "rocket", r, c: c - Math.ceil(run / 2), color: app.grid[r][c - 1].color });
+          }
+          run = 1;
+        }
       }
     }
+    // vertical runs
     for (let c = 0; c < W; c++) {
       let run = 1;
       for (let r = 1; r <= H; r++) {
         const same = r < H && app.grid[r][c] && app.grid[r - 1][c] && app.grid[r][c].color === app.grid[r - 1][c].color;
         if (same) run++;
-        else { if (run >= 3) for (let k = r - run; k < r; k++) hits.add(k + "," + c); run = 1; }
+        else {
+          if (run >= 3) {
+            for (let k = r - run; k < r; k++) hits.add(k + "," + c);
+            if (run >= 4) powerups.push({ type: run >= 5 ? "nova" : "rocket", r: r - Math.ceil(run / 2), c, color: app.grid[r - 1][c].color });
+          }
+          run = 1;
+        }
       }
     }
-    return hits;
+    return { hits, powerups };
+  }
+
+  // Match-4 → a rocket that clears the whole row + column through the match.
+  // Match-5+ → a color nova that clears every tile of that colour.
+  function applyPowerups(hits, powerups) {
+    if (!powerups || !powerups.length) return null;
+    let hasNova = false;
+    powerups.forEach((pu) => {
+      if (pu.type === "nova") {
+        hasNova = true;
+        for (let r = 0; r < H; r++)
+          for (let c = 0; c < W; c++) {
+            const t = app.grid[r][c];
+            if (t && t.color === pu.color) hits.add(r + "," + c);
+          }
+      } else {
+        for (let c = 0; c < W; c++) if (app.grid[pu.r] && app.grid[pu.r][c]) hits.add(pu.r + "," + c);
+        for (let r = 0; r < H; r++) if (app.grid[r][pu.c]) hits.add(r + "," + pu.c);
+      }
+    });
+    return hasNova ? "nova" : "rocket";
+  }
+
+  function flashBoard() {
+    const b = document.getElementById("board");
+    if (!b) return;
+    b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash");
+    setTimeout(() => b.classList.remove("flash"), 400);
   }
 
   function resolveLoop(cascade) {
-    const hits = findMatches();
+    const scan = findMatches();
+    const hits = scan.hits;
     if (hits.size === 0) { endResolve(); return; }
-    // count toward objective
+    // power-ups: matches of 4+ blast extra tiles into `hits` before we clear
+    const puKind = applyPowerups(hits, scan.powerups);
+    // count toward objective (includes power-up-cleared target tiles)
     let gained = 0;
     hits.forEach(key => {
       const [r, c] = key.split(",").map(Number);
@@ -969,9 +1026,17 @@
       const o = document.getElementById("objv");
       if (o) o.textContent = `${cap(app.targetColor)} ${app.collected}/${app.target}`;
     }
-    // toast
-    const label = cascade >= 3 ? "Amazing!" : cascade >= 2 ? "Great chain!" : cascade >= 1 ? "Nice match!" : "Match!";
+    // toast — a power-up outranks the cascade praise
+    let label;
+    if (puKind === "nova") label = "🌟 COLOR NOVA!";
+    else if (puKind === "rocket") label = "⚡ POWER-UP!";
+    else label = cascade >= 3 ? "Amazing!" : cascade >= 2 ? "Great chain!" : cascade >= 1 ? "Nice match!" : "Match!";
     showToast(label);
+    if (puKind) {
+      app.coins += puKind === "nova" ? 40 : 20;
+      syncHud();
+      flashBoard();
+    }
     // pop matched
     hits.forEach(key => {
       const [r, c] = key.split(",").map(Number);
