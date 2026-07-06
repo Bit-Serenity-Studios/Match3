@@ -7,7 +7,6 @@ import { StoreScreen } from './src/screens/StoreScreen';
 import { PassScreen } from './src/screens/PassScreen';
 import { DevDashboardScreen } from './src/screens/DevDashboardScreen';
 import { DailyScreen } from './src/screens/DailyScreen';
-import { MenuScreen } from './src/screens/MenuScreen';
 import { HomeHubScreen } from './src/screens/HomeHubScreen';
 import { PrivacyScreen } from './src/screens/PrivacyScreen';
 import { AboutScreen } from './src/screens/AboutScreen';
@@ -58,8 +57,6 @@ export default function App(): React.ReactElement {
         <SplashScreen onDone={() => setSplashDone(true)} />
       ) : needsTos ? (
         <TosModal />
-      ) : screen === 'menu' ? (
-        <MenuScreen />
       ) : screen === 'home' ? (
         <HomeHubScreen />
       ) : screen === 'hub' ? (

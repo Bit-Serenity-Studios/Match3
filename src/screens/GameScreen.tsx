@@ -90,7 +90,6 @@ export function GameScreen() {
   const goToHub = useUI((s) => s.goToHub);
   const goToHome = useUI((s) => s.goToHome);
   const goToStore = useUI((s) => s.goToStore);
-  const goToMenu = useUI((s) => s.goToMenu);
   const tutorialSeen = useProfile((s) => s.tutorialSeen);
   const markTutorialSeen = useProfile((s) => s.markTutorialSeen);
   const tutorialLevelsCleared = useProfile((s) => s.tutorialLevelsCleared);
@@ -408,8 +407,8 @@ export function GameScreen() {
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Pressable style={styles.hubBtn} onPress={click(goToMenu)}>
-            <Text style={styles.hubBtnLabel}>Menu</Text>
+          <Pressable style={styles.hubBtn} onPress={click(goToHome)}>
+            <Text style={styles.hubBtnLabel}>Home</Text>
           </Pressable>
           {hubUnlocked && (
             <Pressable style={styles.hubBtn} onPress={click(() => goToHub())}>

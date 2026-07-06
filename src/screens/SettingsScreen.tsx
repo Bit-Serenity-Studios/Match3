@@ -17,7 +17,7 @@ import { TRACKS, currentTrack, nextTrack, prevTrack, playTrack } from '../audio/
  * generated ambient loops.
  */
 export function SettingsScreen(): React.ReactElement {
-  const goToMenu = useUI((s) => s.goToMenu);
+  const goToHome = useUI((s) => s.goToHome);
   const goToPrivacy = useUI((s) => s.goToPrivacy);
   const goToAbout = useUI((s) => s.goToAbout);
 
@@ -54,7 +54,7 @@ export function SettingsScreen(): React.ReactElement {
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>Settings</Text>
-        <Pressable style={styles.backBtn} onPress={click(goToMenu)}>
+        <Pressable style={styles.backBtn} onPress={click(goToHome)}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>
@@ -173,7 +173,7 @@ export function SettingsScreen(): React.ReactElement {
               if (confirmReset) {
                 resetProgress();
                 setConfirmReset(false);
-                goToMenu();
+                goToHome();
               } else {
                 setConfirmReset(true);
               }

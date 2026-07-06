@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 export type Screen =
-  | 'menu'
   | 'home'
   | 'game'
   | 'hub'
@@ -37,7 +36,6 @@ interface UIState {
   goToPass(): void;
   goToDevDashboard(): void;
   goToDaily(): void;
-  goToMenu(): void;
   goToHome(): void;
   goToPrivacy(): void;
   goToAbout(): void;
@@ -65,7 +63,7 @@ interface UIState {
  * Ephemeral (non-persisted) UI navigation state.
  */
 export const useUI = create<UIState>((set) => ({
-  screen: 'menu',
+  screen: 'home',
   hubTab: 'fixtures',
   continueOpen: false,
   pendingOfferSku: null,
@@ -82,7 +80,6 @@ export const useUI = create<UIState>((set) => ({
   goToPass: () => set({ screen: 'pass', headerMenuOpen: false }),
   goToDevDashboard: () => set({ screen: 'devDashboard', headerMenuOpen: false }),
   goToDaily: () => set({ screen: 'daily', headerMenuOpen: false }),
-  goToMenu: () => set({ screen: 'menu', continueOpen: false, headerMenuOpen: false }),
   goToHome: () => set({ screen: 'home', continueOpen: false, headerMenuOpen: false }),
   goToPrivacy: () => set({ screen: 'privacy', headerMenuOpen: false }),
   goToAbout: () => set({ screen: 'about', headerMenuOpen: false }),

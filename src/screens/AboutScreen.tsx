@@ -6,13 +6,13 @@ import { useUI } from '../state/ui';
 import { LEVELS } from '../levels/catalog';
 
 export function AboutScreen(): React.ReactElement {
-  const goToMenu = useUI((s) => s.goToMenu);
+  const goToHome = useUI((s) => s.goToHome);
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>About</Text>
-        <Pressable style={styles.backBtn} onPress={goToMenu}>
+        <Pressable style={styles.backBtn} onPress={goToHome}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>

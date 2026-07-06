@@ -37,6 +37,9 @@ const specialFont = matchFont({
 
 const SWAP_DURATION_MS = 220;
 const REJECT_DURATION_MS = 260;
+const FALL_DURATION_MS = 300;
+const FALL_MAX_STAGGER_MS = 140;
+const FALL_TOTAL_MS = FALL_DURATION_MS + FALL_MAX_STAGGER_MS;
 
 /** Ease-out cubic — quick start, gentle settle. */
 function easeOut(t: number): number {
@@ -62,6 +65,23 @@ interface RejectAnim {
   a: CellPos;
   b: CellPos;
   startedAt: number;
+}
+
+interface FallAnim {
+  startedAt: number;
+  /** "row,col" → drop distance in cells (how far the tile visually falls). */
+  cells: Map<string, number>;
+}
+
+function tilesEqual(a: Tile | null, b: Tile | null): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return (
+    a.color === b.color &&
+    a.special === b.special &&
+    (a.blocker?.kind ?? null) === (b.blocker?.kind ?? null) &&
+    (a.blocker?.layers ?? 0) === (b.blocker?.layers ?? 0)
+  );
 }
 
 export function BoardView({
@@ -110,7 +130,50 @@ export function BoardView({
 
   const [swapAnim, setSwapAnim] = useState<SwapAnim | null>(null);
   const [rejectAnim, setRejectAnim] = useState<RejectAnim | null>(null);
+  const [fallAnim, setFallAnim] = useState<FallAnim | null>(null);
   const [now, setNow] = useState(0);
+  const reduceMotion = useProfile((s) => s.reduceMotion);
+  const prevBoardRef = useRef<BoardSnapshot>(board);
+
+  // Fall-in: whenever the board commits a new state (cascade resolve,
+  // ability cast, retry, level load), diff against the previous board and
+  // drop every changed tile in from above. Drop distance approximates how
+  // many vacancies were filled below it in the same column, so refills
+  // near the bottom travel farther than surface swaps — reads as gravity
+  // without replaying engine steps.
+  useEffect(() => {
+    const prev = prevBoardRef.current;
+    prevBoardRef.current = board;
+    if (prev === board) return;
+    if (reduceMotion) {
+      setFallAnim(null);
+      return;
+    }
+    const sameGeom =
+      prev.width === board.width && prev.height === board.height;
+    const changedInCol: number[] = new Array(board.width).fill(0);
+    const cells = new Map<string, number>();
+    for (let row = 0; row < board.height; row++) {
+      for (let col = 0; col < board.width; col++) {
+        const i = idx(board.width, row, col);
+        if (!board.mask[i]) continue;
+        const nt = board.tiles[i] ?? null;
+        if (!nt) continue;
+        const pt = sameGeom ? (prev.tiles[i] ?? null) : null;
+        if (sameGeom && tilesEqual(pt, nt)) continue;
+        changedInCol[col] = (changedInCol[col] ?? 0) + 1;
+        const drop = Math.min(changedInCol[col]!, row + 2, 6);
+        cells.set(`${row},${col}`, drop);
+      }
+    }
+    if (cells.size === 0) {
+      setFallAnim(null);
+      return;
+    }
+    const startedAt = Date.now();
+    setFallAnim({ startedAt, cells });
+    setNow(startedAt);
+  }, [board, reduceMotion]);
 
   // Spawn / retire the swap animation when pendingSwap changes.
   useEffect(() => {
@@ -142,7 +205,7 @@ export function BoardView({
   }, [rejectedSwap]);
 
   useEffect(() => {
-    if (!swapAnim && !rejectAnim) return;
+    if (!swapAnim && !rejectAnim && !fallAnim) return;
     let raf: number;
     const tick = () => {
       const t = Date.now();
@@ -153,22 +216,26 @@ export function BoardView({
       if (rejectAnim && t - rejectAnim.startedAt >= REJECT_DURATION_MS) {
         setRejectAnim(null);
       }
+      if (fallAnim && t - fallAnim.startedAt >= FALL_TOTAL_MS) {
+        setFallAnim(null);
+      }
       if (
         (swapAnim && t - swapAnim.startedAt < SWAP_DURATION_MS) ||
-        (rejectAnim && t - rejectAnim.startedAt < REJECT_DURATION_MS)
+        (rejectAnim && t - rejectAnim.startedAt < REJECT_DURATION_MS) ||
+        (fallAnim && t - fallAnim.startedAt < FALL_TOTAL_MS)
       ) {
         raf = requestAnimationFrame(tick);
       }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [swapAnim, rejectAnim]);
+  }, [swapAnim, rejectAnim, fallAnim]);
 
   const highlightSet = new Set(
     (highlight ?? []).map((p) => `${p.row},${p.col}`),
   );
 
-  const shake = (flash % 2) * 2 - 1;
+  const shake = reduceMotion ? 0 : (flash % 2) * 2 - 1;
 
   // Swap animation: interpolate positions with a slight overshoot
   const swapRawT = swapAnim
@@ -221,8 +288,9 @@ export function BoardView({
           const cellKey = `${row},${col}`;
           const isHi = highlightSet.has(cellKey);
           const isSwapping = swapAnim && (cellKey === swapAKey || cellKey === swapBKey);
-          // Hide the underlying tile at the swap cells; the moving overlay draws them.
-          const showTileHere = !isSwapping;
+          const isFalling = fallAnim?.cells.has(cellKey) ?? false;
+          // Hide the underlying tile at swap/fall cells; overlays draw them.
+          const showTileHere = !isSwapping && !isFalling;
 
           const wobble =
             rejectSet && rejectSet.has(cellKey) && rejectAnim
@@ -307,6 +375,92 @@ export function BoardView({
             </React.Fragment>
           );
         })}
+
+        {/* Falling tiles — drawn on top of the static grid so they can
+            overlap cells above their resting spot mid-flight. */}
+        {fallAnim &&
+          rangeCells(board).map(({ row, col, i }) => {
+            const cellKey = `${row},${col}`;
+            const drop = fallAnim.cells.get(cellKey);
+            if (drop === undefined || !board.mask[i]) return null;
+            const t = getTile(board, { row, col });
+            if (!t?.color && !t?.blocker) return null;
+            const stagger = Math.min(
+              FALL_MAX_STAGGER_MS,
+              col * 10 + drop * 18,
+            );
+            const raw = Math.max(
+              0,
+              Math.min(1, (now - fallAnim.startedAt - stagger) / FALL_DURATION_MS),
+            );
+            const offsetY = -drop * cellSize * (1 - easeOut(raw));
+            const x = col * cellSize + 3;
+            const y = row * cellSize + 3 + offsetY;
+            const w = cellSize - 6;
+            return (
+              <React.Fragment key={`fall-${cellKey}`}>
+                {t.color && (
+                  <>
+                    <RoundedRect
+                      x={x + 4}
+                      y={y + 4}
+                      width={w - 8}
+                      height={w - 8}
+                      r={6}
+                      color={TILE_HEX[t.color]}
+                      opacity={0.32}
+                    />
+                    {art.tiles[t.color] ? (
+                      <ImageSVG
+                        svg={art.tiles[t.color]}
+                        x={x + w * 0.12}
+                        y={y + w * 0.12}
+                        width={w * 0.76}
+                        height={w * 0.76}
+                      />
+                    ) : (
+                      <Text
+                        x={x + w / 2 - 8}
+                        y={y + w / 2 + 8}
+                        text={TILE_GLYPH[t.color]}
+                        font={glyphFont}
+                        color={palette.parchment}
+                      />
+                    )}
+                  </>
+                )}
+                {t.blocker && (
+                  <RoundedRect
+                    x={x + 2}
+                    y={y + 2}
+                    width={w - 4}
+                    height={w - 4}
+                    r={6}
+                    color={blockerColor(t.blocker.kind)}
+                    opacity={0.55}
+                  />
+                )}
+                {t.special &&
+                  (art.specials[t.special] ? (
+                    <ImageSVG
+                      svg={art.specials[t.special]}
+                      x={x + w - w * 0.42 - 2}
+                      y={y + 2}
+                      width={w * 0.42}
+                      height={w * 0.42}
+                    />
+                  ) : (
+                    <Text
+                      x={x + w - 14}
+                      y={y + 14}
+                      text={specialGlyph(t.special)}
+                      font={specialFont}
+                      color={palette.parchment}
+                    />
+                  ))}
+              </React.Fragment>
+            );
+          })}
 
         {/* Two moving tiles for the swap glide, rendered on top */}
         {swapAnim && (

@@ -18,7 +18,7 @@ import { sfx } from '../audio/soundEffects';
  * escalates the reward; missing 2+ days resets the cycle.
  */
 export function DailyScreen(): React.ReactElement {
-  const goToMenu = useUI((s) => s.goToMenu);
+  const goToHome = useUI((s) => s.goToHome);
   const cal = useRetention((s) => s.calendar);
   const idx = useRetention((s) => s.currentCalendarDayIndex(Date.now()));
   const canLogin = useRetention((s) => canClaim(s, Date.now()));
@@ -45,7 +45,7 @@ export function DailyScreen(): React.ReactElement {
           <Text style={typography.h1}>Daily Rewards</Text>
           <Text style={typography.small}>Return every night.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={click(() => goToMenu())}>
+        <Pressable style={styles.backBtn} onPress={click(() => goToHome())}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>
