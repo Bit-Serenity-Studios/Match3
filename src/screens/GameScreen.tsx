@@ -12,7 +12,7 @@ import { withDifficulty } from '../engine/difficulty';
 import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
-import { LEVELS, getLevelByIndex } from '../levels/catalog';
+import { LEVELS, getLevelByIndex, isEndlessIndex } from '../levels/catalog';
 import {
   UNLOCK_HUB_AT,
   difficultyEaseFor,
@@ -37,6 +37,7 @@ import { useRetention } from '../state/retention';
 import { sfx } from '../audio/soundEffects';
 import { click } from '../audio/click';
 import { TutorialOverlay } from './TutorialOverlay';
+import { MilestoneOverlay } from './MilestoneOverlay';
 
 function normalizeGrantsForTelemetry(
   g: import('../monetization/types').Grants,
@@ -92,6 +93,9 @@ export function GameScreen() {
   const goToMenu = useUI((s) => s.goToMenu);
   const tutorialSeen = useProfile((s) => s.tutorialSeen);
   const markTutorialSeen = useProfile((s) => s.markTutorialSeen);
+  const tutorialLevelsCleared = useProfile((s) => s.tutorialLevelsCleared);
+  const markTutorialLevelsCleared = useProfile((s) => s.markTutorialLevelsCleared);
+  const [milestone, setMilestone] = useState<null | 'tutorialDone' | 'endlessStart'>(null);
   const continueOpen = useUI((s) => s.continueOpen);
   const openContinue = useUI((s) => s.openContinue);
   const closeContinue = useUI((s) => s.closeContinue);
@@ -113,9 +117,7 @@ export function GameScreen() {
   const progressPassChallenge = useMonetization((s) => s.progressPassChallenge);
 
   const level = useMemo(
-    () =>
-      getLevelByIndex(currentLevelIndex) ??
-      getLevelByIndex(LEVELS.length - 1)!,
+    () => getLevelByIndex(currentLevelIndex)!,
     [currentLevelIndex],
   );
 
@@ -221,6 +223,22 @@ export function GameScreen() {
             progressPassChallenge('weekly.coins500', rew.coins, Date.now());
             if (tunedLevel.archetype === 'wow') {
               useRetention.getState().registerWowLevelCleared();
+            }
+            // Milestone hand-offs: last tutorial level cleared, and first
+            // step into endless generation. Shown as a modal on the win
+            // screen the next time the overlay renders.
+            if (tunedLevel.archetype === 'tutorial' && !tutorialLevelsCleared) {
+              const next = getLevelByIndex(currentLevelIndex + 1);
+              if (!next || next.archetype !== 'tutorial') {
+                markTutorialLevelsCleared();
+                setMilestone('tutorialDone');
+              }
+            }
+            if (
+              !isEndlessIndex(currentLevelIndex) &&
+              isEndlessIndex(currentLevelIndex + 1)
+            ) {
+              setMilestone('endlessStart');
             }
             track('level_finished', {
               levelId: r.next.levelId,
@@ -373,7 +391,7 @@ export function GameScreen() {
     return summarizeFail(state, objectiveLabel);
   }, [state, objectiveLabel]);
 
-  const isLastLevel = currentLevelIndex >= LEVELS.length - 1;
+  const isLastLevel = false; // endless: there's always a next level
   const hubUnlocked = highestUnlocked >= UNLOCK_HUB_AT;
 
   return (
@@ -523,6 +541,25 @@ export function GameScreen() {
       )}
 
       {!tutorialSeen && <TutorialOverlay onDone={markTutorialSeen} />}
+
+      {milestone === 'tutorialDone' && (
+        <MilestoneOverlay
+          glyph="🎓"
+          title="You've finished the tutorial!"
+          body="You've cleared every training level. From here the recipes get more clever — new blockers, tougher targets, and richer rewards."
+          actionLabel="Onward"
+          onAction={() => setMilestone(null)}
+        />
+      )}
+      {milestone === 'endlessStart' && (
+        <MilestoneOverlay
+          glyph="♾️"
+          title="Endless Cauldron"
+          body="You've cleared all 60 crafted levels. The garden keeps growing — new levels are brewed on the fly, each a little tougher than the last. See how deep you can go."
+          actionLabel="Keep brewing"
+          onAction={() => setMilestone(null)}
+        />
+      )}
     </View>
   );
 }

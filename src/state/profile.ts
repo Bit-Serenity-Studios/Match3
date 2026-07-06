@@ -52,6 +52,8 @@ export interface ProfileState {
 
   // First-run flags
   tutorialSeen: boolean;
+  /** True once the player clears the last authored tutorial-archetype level. */
+  tutorialLevelsCleared: boolean;
   tosAcceptedAt: number; // 0 = not accepted
   soundEnabled: boolean;
   hapticsEnabled: boolean;
@@ -61,6 +63,7 @@ export interface ProfileState {
 
   // Actions
   markTutorialSeen(): void;
+  markTutorialLevelsCleared(): void;
   acceptTos(now: number): void;
   setSoundEnabled(v: boolean): void;
   setHapticsEnabled(v: boolean): void;
@@ -127,6 +130,7 @@ export const useProfile = create<ProfileState>()(
       activeExpeditions: [],
       fixtureLevels: {},
       tutorialSeen: false,
+      tutorialLevelsCleared: false,
       tosAcceptedAt: 0,
       soundEnabled: true,
       hapticsEnabled: true,
@@ -134,6 +138,9 @@ export const useProfile = create<ProfileState>()(
 
       markTutorialSeen() {
         set({ tutorialSeen: true });
+      },
+      markTutorialLevelsCleared() {
+        set({ tutorialLevelsCleared: true });
       },
       acceptTos(now) {
         set({ tosAcceptedAt: now });
@@ -201,6 +208,7 @@ export const useProfile = create<ProfileState>()(
           activeExpeditions: [],
           fixtureLevels: {},
           tutorialSeen: false,
+          tutorialLevelsCleared: false,
           moonstones: 0,
         });
       },
