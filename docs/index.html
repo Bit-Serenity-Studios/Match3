@@ -482,6 +482,42 @@
   .ledger .foot b { color: var(--candle-soft); }
 
   .credit { text-align: center; margin-top: 56px; font-size: 12px; color: var(--ink-faint); }
+
+  /* ── immersive full-screen app on phones (reads like the installed app) ── */
+  @media (max-width: 700px) {
+    html, body { height: 100%; background: var(--bg-deep); }
+    .wrap {
+      padding: 0;
+      display: block;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--bg-deep);
+    }
+    .shell { max-width: none; }
+    /* hide the showcase chrome — the game becomes the whole screen */
+    .masthead, .ledger, .device-hint, .credit { display: none; }
+    .stage { display: block; gap: 0; margin-top: 0; }
+    .phone-col { gap: 0; }
+    .phone {
+      width: 100%;
+      max-width: none;
+      aspect-ratio: auto;
+      height: 100vh;
+      height: 100dvh;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    .phone::after { display: none; }      /* drop the fake camera notch */
+    .screen {
+      border-radius: 0;
+      height: 100vh;
+      height: 100dvh;
+    }
+    /* clear the real status bar up top and the home indicator at the bottom */
+    .hud { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+    .nav { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  }
 </style>
 
 <div class="wrap">
@@ -1158,7 +1194,7 @@
     const scr = document.getElementById("screen");
     menuEl = document.createElement("div");
     menuEl.style.cssText =
-      "position:absolute;top:56px;right:10px;z-index:80;min-width:186px;background:var(--bg-surface);" +
+      "position:absolute;z-index:80;min-width:186px;background:var(--bg-surface);" +
       "border:1px solid var(--candle-soft);border-radius:14px;padding:6px;box-shadow:0 12px 34px rgba(0,0,0,.55)";
     menuEl.innerHTML =
       '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--parch-dim);padding:8px 10px 6px">Menu</div>' +
@@ -1169,6 +1205,11 @@
         `<span style="font-size:18px;width:22px;display:inline-block;text-align:center">${it[0]}</span>${it[1]}</button>`
       ).join("");
     scr.appendChild(menuEl);
+    // anchor just under the ≡ button, right-aligned — works framed or full-screen
+    const sr = scr.getBoundingClientRect();
+    const br = document.getElementById("burger").getBoundingClientRect();
+    menuEl.style.top = (br.bottom - sr.top + 6) + "px";
+    menuEl.style.right = Math.max(6, sr.right - br.right) + "px";
     menuEl.querySelectorAll("button[data-mi]").forEach((b) => {
       b.onclick = () => {
         const idx = +b.dataset.mi;
