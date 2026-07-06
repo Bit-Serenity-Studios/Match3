@@ -50,7 +50,16 @@ export interface ProfileState {
   // Hub
   fixtureLevels: Partial<Record<FixtureId, number>>;
 
+  // First-run flags
+  tutorialSeen: boolean;
+  soundEnabled: boolean;
+  hapticsEnabled: boolean;
+
   // Actions
+  markTutorialSeen(): void;
+  setSoundEnabled(v: boolean): void;
+  setHapticsEnabled(v: boolean): void;
+
   registerWin(levelId: string, rewards: LevelRewards): void;
   registerLoss(levelId: string): void;
   advanceLevel(): void;
@@ -106,6 +115,19 @@ export const useProfile = create<ProfileState>()(
       pity: initPity(1),
       activeExpeditions: [],
       fixtureLevels: {},
+      tutorialSeen: false,
+      soundEnabled: true,
+      hapticsEnabled: true,
+
+      markTutorialSeen() {
+        set({ tutorialSeen: true });
+      },
+      setSoundEnabled(v) {
+        set({ soundEnabled: v });
+      },
+      setHapticsEnabled(v) {
+        set({ hapticsEnabled: v });
+      },
 
       registerWin(levelId, rewards) {
         set((s) => {
@@ -159,6 +181,7 @@ export const useProfile = create<ProfileState>()(
           pity: initPity(1),
           activeExpeditions: [],
           fixtureLevels: {},
+          tutorialSeen: false,
         });
       },
 

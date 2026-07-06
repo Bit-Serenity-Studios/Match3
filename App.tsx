@@ -6,6 +6,10 @@ import { StoreScreen } from './src/screens/StoreScreen';
 import { PassScreen } from './src/screens/PassScreen';
 import { DevDashboardScreen } from './src/screens/DevDashboardScreen';
 import { DailyScreen } from './src/screens/DailyScreen';
+import { MenuScreen } from './src/screens/MenuScreen';
+import { PrivacyScreen } from './src/screens/PrivacyScreen';
+import { AboutScreen } from './src/screens/AboutScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
 import { useUI } from './src/state/ui';
 import { useTelemetry } from './src/telemetry/logger';
 import { useRetention } from './src/state/retention';
@@ -28,7 +32,9 @@ export default function App(): React.ReactElement {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {screen === 'hub' ? (
+      {screen === 'menu' ? (
+        <MenuScreen />
+      ) : screen === 'hub' ? (
         <HubScreen />
       ) : screen === 'store' ? (
         <StoreScreen />
@@ -38,6 +44,12 @@ export default function App(): React.ReactElement {
         <DevDashboardScreen />
       ) : screen === 'daily' ? (
         <DailyScreen />
+      ) : screen === 'privacy' ? (
+        <PrivacyScreen />
+      ) : screen === 'about' ? (
+        <AboutScreen />
+      ) : screen === 'settings' ? (
+        <SettingsScreen />
       ) : (
         <GameScreen />
       )}

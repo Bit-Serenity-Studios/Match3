@@ -34,6 +34,7 @@ import { summarizeFail, CONTINUE_EXTRA_MOVES, priceForContinue } from '../moneti
 import { getMonetization } from '../monetization/singleton';
 import { track } from '../telemetry/logger';
 import { useRetention } from '../state/retention';
+import { TutorialOverlay } from './TutorialOverlay';
 
 function normalizeGrantsForTelemetry(
   g: import('../monetization/types').Grants,
@@ -85,6 +86,9 @@ export function GameScreen() {
   const owned = useProfile((s) => s.ownedCompanions);
   const goToHub = useUI((s) => s.goToHub);
   const goToStore = useUI((s) => s.goToStore);
+  const goToMenu = useUI((s) => s.goToMenu);
+  const tutorialSeen = useProfile((s) => s.tutorialSeen);
+  const markTutorialSeen = useProfile((s) => s.markTutorialSeen);
   const continueOpen = useUI((s) => s.continueOpen);
   const openContinue = useUI((s) => s.openContinue);
   const closeContinue = useUI((s) => s.closeContinue);
@@ -122,6 +126,7 @@ export function GameScreen() {
   );
   const [flash, setFlash] = useState(0);
   const [highlight, setHighlight] = useState<CellPos[] | undefined>(undefined);
+  const [rejectedSwap, setRejectedSwap] = useState<[CellPos, CellPos] | null>(null);
   const [ended, setEnded] = useState(false);
   const [charge, setCharge] = useState(0);
   const [castSeed, setCastSeed] = useState(0);
@@ -153,7 +158,9 @@ export function GameScreen() {
       const r = applySwap(state, a, b);
       if (!r.accepted) {
         setHighlight([a, b]);
-        setTimeout(() => setHighlight(undefined), 180);
+        setRejectedSwap([a, b]);
+        setTimeout(() => setHighlight(undefined), 260);
+        setTimeout(() => setRejectedSwap(null), 300);
         return;
       }
       const cascades = r.events.filter((e) => e.t === 'cascade').length;
@@ -336,11 +343,16 @@ export function GameScreen() {
             </Text>
           </Pressable>
         </View>
-        {hubUnlocked && (
-          <Pressable style={styles.hubBtn} onPress={() => goToHub()}>
-            <Text style={styles.hubBtnLabel}>Hub</Text>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Pressable style={styles.hubBtn} onPress={goToMenu}>
+            <Text style={styles.hubBtnLabel}>Menu</Text>
           </Pressable>
-        )}
+          {hubUnlocked && (
+            <Pressable style={styles.hubBtn} onPress={() => goToHub()}>
+              <Text style={styles.hubBtnLabel}>Hub</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <View style={styles.hud}>
@@ -371,6 +383,7 @@ export function GameScreen() {
           size={boardSize}
           onSwap={onSwap}
           highlight={highlight}
+          rejectedSwap={rejectedSwap}
           flash={flash}
         />
       </View>
@@ -455,6 +468,8 @@ export function GameScreen() {
           )}
         </View>
       )}
+
+      {!tutorialSeen && <TutorialOverlay onDone={markTutorialSeen} />}
     </View>
   );
 }

@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 
-export type Screen = 'game' | 'hub' | 'store' | 'pass' | 'devDashboard' | 'daily';
+export type Screen =
+  | 'menu'
+  | 'game'
+  | 'hub'
+  | 'store'
+  | 'pass'
+  | 'devDashboard'
+  | 'daily'
+  | 'privacy'
+  | 'about'
+  | 'settings';
 export type HubTab = 'fixtures' | 'companions' | 'expeditions';
 
 interface UIState {
@@ -16,6 +26,10 @@ interface UIState {
   goToPass(): void;
   goToDevDashboard(): void;
   goToDaily(): void;
+  goToMenu(): void;
+  goToPrivacy(): void;
+  goToAbout(): void;
+  goToSettings(): void;
   setHubTab(t: HubTab): void;
   openContinue(): void;
   closeContinue(): void;
@@ -29,7 +43,7 @@ interface UIState {
  * the player on the game screen (frictionless onboarding per the brief).
  */
 export const useUI = create<UIState>((set) => ({
-  screen: 'game',
+  screen: 'menu',
   hubTab: 'fixtures',
   continueOpen: false,
   pendingOfferSku: null,
@@ -40,6 +54,10 @@ export const useUI = create<UIState>((set) => ({
   goToPass: () => set({ screen: 'pass' }),
   goToDevDashboard: () => set({ screen: 'devDashboard' }),
   goToDaily: () => set({ screen: 'daily' }),
+  goToMenu: () => set({ screen: 'menu', continueOpen: false }),
+  goToPrivacy: () => set({ screen: 'privacy' }),
+  goToAbout: () => set({ screen: 'about' }),
+  goToSettings: () => set({ screen: 'settings' }),
   setHubTab: (t) => set({ hubTab: t }),
   openContinue: () => set({ continueOpen: true }),
   closeContinue: () => set({ continueOpen: false }),
