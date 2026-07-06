@@ -411,6 +411,58 @@
     100% { opacity: 0; transform: translate(-50%,-58%) scale(1); }
   }
 
+  /* ── combo banner (big, escalating, animated) ── */
+  .combo {
+    position: absolute; left: 50%; top: 30%;
+    transform: translate(-50%,-50%) scale(0);
+    font-weight: 900; font-style: italic; letter-spacing: .01em;
+    color: var(--candle); white-space: nowrap;
+    text-shadow: 0 2px 0 rgba(0,0,0,.4), 0 0 26px rgba(230,178,90,.75);
+    pointer-events: none; z-index: 45; opacity: 0;
+  }
+  .combo.show { animation: comboPop .72s cubic-bezier(.2,1.5,.35,1) forwards; }
+  @keyframes comboPop {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(.3) rotate(-9deg); }
+    30%  { opacity: 1; transform: translate(-50%,-50%) scale(1.18) rotate(4deg); }
+    55%  { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(0); }
+    100% { opacity: 0; transform: translate(-50%,-64%) scale(1) rotate(0); }
+  }
+  /* ── floating +score ── */
+  .scorepop {
+    position: absolute; left: 50%; top: 14%;
+    transform: translate(-50%,0);
+    font-weight: 800; font-size: 15px; color: var(--parch);
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    pointer-events: none; z-index: 44; opacity: 0;
+    animation: scorePop .8s ease forwards;
+  }
+  @keyframes scorePop {
+    0% { opacity: 0; transform: translate(-50%,6px) scale(.8); }
+    25% { opacity: 1; transform: translate(-50%,-2px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-26px) scale(1); }
+  }
+  /* ── board shake (intensity via --shake) ── */
+  .board-wrap { position: relative; }
+  .board-wrap.shake { animation: shake .34s ease; }
+  @keyframes shake {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(calc(var(--shake,4px) * -1), 2px); }
+    40% { transform: translate(var(--shake,4px), -2px); }
+    60% { transform: translate(calc(var(--shake,4px) * -0.6), -1px); }
+    80% { transform: translate(calc(var(--shake,4px) * 0.6), 1px); }
+  }
+  .reduce .board-wrap.shake { animation: none; }
+  /* ── score / best cards ── */
+  .scorerow { display: flex; gap: 8px; margin-bottom: 8px; }
+  .scard {
+    flex: 1; text-align: center;
+    background: var(--bg-surface-2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 6px 4px;
+  }
+  .scard .sl { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--parch-dim); }
+  .scard .sv { font-size: 22px; font-weight: 900; color: var(--candle); }
+  .scard.best .sv { color: var(--parch); }
+
   .overlay {
     position: absolute; inset: 0; background: rgba(16,8,32,.82);
     display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -680,10 +732,14 @@
     level: 1,
     coins: 120, stones: 0, stars: 0,
     // per-game
-    moves: 0, target: 0, targetColor: "moonpetal", collected: 0,
+    moves: 0, target: 0, targetColor: "moonpetal", collected: 0, score: 0,
     grid: null, rng: null, nextId: 1, busy: false, sel: null,
     reduce: window.matchMedia("(prefers-reduced-motion: reduce)").matches
   };
+
+  // persisted best score across sessions
+  const BEST_KEY = "moonpetal.preview.bestScore";
+  let bestScore = parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0;
 
   const bodyRoot = document.getElementById("bodyRoot");
 
@@ -799,6 +855,7 @@
     app.target = 8 + Math.floor((app.level - 1) * 1.5);
     app.moves = Math.max(16, 24 - Math.floor((app.level - 1) / 8));
     app.collected = 0;
+    app.score = 0;
     app.busy = false; app.sel = null; app.nextId = 1;
     app.grid = freshGrid();
     renderGame();
@@ -834,15 +891,20 @@
             <div class="gtitle">Moonpetal Apothecary<b>Level ${app.level}</b></div>
             <button class="home-btn" data-act="home">Home</button>
           </div>
+          <div class="scorerow">
+            <div class="scard"><div class="sl">Score</div><div class="sv" id="score">${app.score.toLocaleString()}</div></div>
+            <div class="scard best"><div class="sl">Best</div><div class="sv" id="best">${bestScore.toLocaleString()}</div></div>
+          </div>
           <div class="stats">
             <div class="stat"><div class="sl">Moves</div><div class="sv" id="mvs">${app.moves}</div></div>
             <div class="stat obj"><div class="sl">Objective</div><div class="sv" id="objv">${cap(app.targetColor)} ${app.collected}/${app.target}</div></div>
           </div>
-          <div class="phint">Match <b>4</b> for a ⚡ power-up · <b>5+</b> for a 🌟 color nova</div>
+          <div class="phint">Match <b>4</b> for a ⚡ power-up · chain matches for <b>combos</b></div>
           <div class="board-wrap">
             <div class="board" id="board" style="width:${boardW}px;height:${boardH}px">
               <div class="toast" id="toast"></div>
             </div>
+            <div class="combo" id="combo"></div>
           </div>
         </div>
         <div class="overlay" id="ov">
@@ -1008,6 +1070,44 @@
     setTimeout(() => b.classList.remove("flash"), 400);
   }
 
+  function updateScore() {
+    const s = document.getElementById("score");
+    if (s) s.textContent = app.score.toLocaleString();
+    if (app.score > bestScore) {
+      bestScore = app.score;
+      try { localStorage.setItem(BEST_KEY, String(bestScore)); } catch (e) {}
+      const b = document.getElementById("best");
+      if (b) b.textContent = bestScore.toLocaleString();
+    }
+  }
+  function floatScore(pts, mult) {
+    const wrap = document.querySelector(".board-wrap");
+    if (!wrap) return;
+    const d = document.createElement("div");
+    d.className = "scorepop";
+    d.textContent = "+" + pts.toLocaleString() + (mult >= 2 ? "  ×" + mult : "");
+    wrap.appendChild(d);
+    setTimeout(() => d.remove(), 820);
+  }
+  const COMBO_WORDS = ["", "", "COMBO", "SUPER", "MEGA", "INSANE", "UNREAL"];
+  const COMBO_COLORS = ["", "", "#e6b25a", "#f2a94e", "#ef8fb0", "#c9a4ff", "#7be3a8"];
+  function showCombo(mult) {
+    const el = document.getElementById("combo");
+    if (!el) return;
+    const word = COMBO_WORDS[Math.min(mult, COMBO_WORDS.length - 1)] || "UNREAL";
+    el.textContent = `${word} ×${mult}`;
+    el.style.fontSize = Math.min(48, 22 + mult * 5) + "px";
+    el.style.color = COMBO_COLORS[Math.min(mult, COMBO_COLORS.length - 1)] || "#7be3a8";
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  }
+  function shakeBoard(mult) {
+    const w = document.querySelector(".board-wrap");
+    if (!w || app.reduce) return;
+    w.style.setProperty("--shake", Math.min(9, 2 + mult) + "px");
+    w.classList.remove("shake"); void w.offsetWidth; w.classList.add("shake");
+    setTimeout(() => w.classList.remove("shake"), 340);
+  }
+
   function resolveLoop(cascade) {
     const scan = findMatches();
     const hits = scan.hits;
@@ -1026,17 +1126,17 @@
       const o = document.getElementById("objv");
       if (o) o.textContent = `${cap(app.targetColor)} ${app.collected}/${app.target}`;
     }
-    // toast — a power-up outranks the cascade praise
-    let label;
-    if (puKind === "nova") label = "🌟 COLOR NOVA!";
-    else if (puKind === "rocket") label = "⚡ POWER-UP!";
-    else label = cascade >= 3 ? "Amazing!" : cascade >= 2 ? "Great chain!" : cascade >= 1 ? "Nice match!" : "Match!";
-    showToast(label);
-    if (puKind) {
-      app.coins += puKind === "nova" ? 40 : 20;
-      syncHud();
-      flashBoard();
-    }
+    // ── juicy feedback: score + combo banner + shake, all escalating ──
+    const mult = cascade + 1; // chain depth = combo multiplier (1, 2, 3, …)
+    const pts = hits.size * 10 * mult + (puKind ? (puKind === "nova" ? 200 : 100) : 0);
+    app.score += pts;
+    updateScore();
+    floatScore(pts, mult);
+    if (puKind === "nova") showToast("🌟 COLOR NOVA!");
+    else if (puKind === "rocket") showToast("⚡ POWER-UP!");
+    if (cascade >= 1) showCombo(mult);
+    if (puKind) { app.coins += puKind === "nova" ? 40 : 20; syncHud(); flashBoard(); }
+    if (puKind || cascade >= 1) shakeBoard(puKind ? Math.max(3, mult) : mult);
     // pop matched
     hits.forEach(key => {
       const [r, c] = key.split(",").map(Number);
@@ -1094,13 +1194,15 @@
 
   function win() {
     app.busy = true;
+    app.score += app.moves * 50; // leftover-moves bonus
+    updateScore();
     const reward = 40 + app.level * 8;
     app.coins += reward; app.stones += 5; app.stars += 1;
     app.level++;
     syncHud();
     const ov = document.getElementById("ov");
     document.getElementById("ovh").textContent = "✨ Brewed!";
-    document.getElementById("ovp").textContent = `The moon smiled on your work. +${reward}🪙  +5🏵️  +1⭐`;
+    document.getElementById("ovp").textContent = `Score ${app.score.toLocaleString()}${app.score >= bestScore ? " — new best!" : ""} · +${reward}🪙 +5🏵️ +1⭐`;
     const b = document.getElementById("ovb");
     b.textContent = "Next level";
     b.onclick = () => { ov.classList.remove("show"); startGame(); };
