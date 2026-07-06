@@ -1,11 +1,12 @@
 name: EAS Update (Expo Go)
 
-# Publishes the current JS bundle to Expo's cloud on every push so the game
-# opens in Expo Go WITHOUT a PC tunnel. See EAS_PREVIEW.md for the one-time
-# setup (Expo account, `eas init`, and the EXPO_TOKEN repo secret).
+# Publishes the real app's JS bundle to Expo's cloud so it opens in Expo Go
+# with NO PC involved. GitHub's runners have open internet, so the whole
+# thing — linking the Expo project, configuring updates, and publishing —
+# happens here in CI. The only human step is adding the EXPO_TOKEN secret
+# once (from a phone). See EAS_PREVIEW.md.
 #
-# This job is a no-op until the EXPO_TOKEN secret exists — it exits early so
-# pushes don't fail before you've finished setup.
+# Until EXPO_TOKEN exists the job self-skips, so pushes never fail.
 
 on:
   push:
@@ -17,23 +18,30 @@ on:
       - '**/*.md'
   workflow_dispatch:
 
+permissions:
+  contents: write # allow committing the linked projectId back to app.json
+
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - name: Check for EXPO_TOKEN
         id: guard
+        env:
+          HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
         run: |
-          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
-            echo "EXPO_TOKEN not set — skipping EAS update. See EAS_PREVIEW.md."
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          else
+          if [ "$HAS_TOKEN" = "true" ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "EXPO_TOKEN not set — skipping. Add it (see EAS_PREVIEW.md) to enable."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout
         if: steps.guard.outputs.ok == 'true'
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         if: steps.guard.outputs.ok == 'true'
@@ -53,6 +61,24 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Publish update
+      - name: Link the Expo project (first run only)
+        if: steps.guard.outputs.ok == 'true'
+        run: |
+          set -e
+          LINKED=$(node -e "try{const id=require('./app.json').expo?.extra?.eas?.projectId;process.stdout.write(id?'yes':'no')}catch(e){process.stdout.write('no')}")
+          if [ "$LINKED" = "no" ]; then
+            echo "No projectId yet — creating/linking the Expo project…"
+            eas init --non-interactive --force
+            eas update:configure --non-interactive || true
+            git config user.name "eas-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app.json
+            git commit -m "chore: link EAS project for Expo Go updates [skip ci]" || echo "nothing to commit"
+            git push || echo "push skipped"
+          else
+            echo "Project already linked (projectId present)."
+          fi
+
+      - name: Publish update to the preview branch
         if: steps.guard.outputs.ok == 'true'
         run: eas update --branch preview --message "${{ github.event.head_commit.message || 'manual update' }}" --non-interactive

@@ -1,75 +1,78 @@
-# Open Moonpetal in Expo Go — without a PC tunnel
+# Open Moonpetal in Expo Go — no PC, ever
 
-`npm run start:tunnel` needs your PC running. **EAS Update** publishes the JS
-bundle to Expo's cloud instead, so the real game opens in Expo Go from
-anywhere — and it can auto-publish on every git push.
+The real game (not the web mockup) can open in Expo Go straight from the
+cloud. GitHub Actions publishes the JS bundle to Expo's servers on every
+push, and Expo Go loads it — your PC is never involved.
 
-The app already runs in Expo Go (Skia, Reanimated, gesture-handler, and
-audio are all bundled into Expo Go for SDK 54), so no dev build is needed.
+The app already runs in Expo Go on SDK 54 (Skia, Reanimated, gesture
+handler, and audio are all bundled into Expo Go), so no custom build is
+needed.
 
-## One-time setup (~5 minutes, on your PC)
+## One-time setup — all from your phone (~4 minutes)
 
-Do this once. After that, updates are automatic on push (or one command).
+Everything below is a phone browser + the Expo Go app. No computer.
 
 ### 1. Make a free Expo account
 
-Sign up at **expo.dev** (or `npx expo login` / `npx expo register`).
+In your phone browser, go to **expo.dev** → **Sign up**. (Or open the
+**Expo Go** app → **Profile / Log in** → create an account there.)
 
-### 2. Link the project
+### 2. Create an access token
 
-From the repo on your PC:
+Phone browser → **expo.dev** → tap your avatar → **Settings** →
+**Access tokens** → **Create token** → copy it.
+(This token only touches your Expo account. You can revoke it anytime.)
 
-```bash
-npx eas-cli login          # sign in with the Expo account
-npx eas-cli init           # creates the project on Expo's servers and
-                           # writes extra.eas.projectId + updates.url into app.json
-npx eas-cli update:configure   # confirms the runtimeVersion policy (already set)
-```
+### 3. Add the token to GitHub
 
-Commit the `app.json` changes `eas init` makes, and push.
+Phone browser → the repo **`bit-serenity-studios/match3`** →
+**Settings** → **Secrets and variables** → **Actions** →
+**New repository secret**:
+- **Name:** `EXPO_TOKEN`
+- **Secret:** paste the token → **Add secret**
 
-### 3. Publish the first update
+### 4. Kick off the first publish
 
-```bash
-npm run publish
-# = eas update --branch preview --message "<last commit subject>"
-```
+Phone browser → repo → **Actions** tab → **EAS Update (Expo Go)** →
+**Run workflow**. (Or just wait for the next push — it runs automatically.)
 
-The command prints a QR code and a link.
+The workflow links the Expo project, configures it, and publishes — all on
+GitHub's servers. First run takes a couple minutes.
 
-### 4. Open it in Expo Go
+### 5. Open it in Expo Go
 
-- Open **Expo Go** on your iPhone and **sign in with the same Expo account**.
-- Your project appears under the **Projects** tab → tap it → it loads the
-  published bundle. No tunnel, no PC.
-- Or scan the QR that `npm run publish` printed.
+Open **Expo Go** on your iPhone, signed in with the same Expo account.
+Your project **"Moonpetal Apothecary"** shows under the **Projects** tab →
+tap it → the real game loads from the cloud. No tunnel, no PC.
 
-## Automatic updates on every push (optional but recommended)
+## After setup
 
-A GitHub Action (`.github/workflows/eas-update.yml`) is already committed. It
-publishes a new update on every push once you add one secret:
+Every push republishes automatically. Open Expo Go, tap the project, and
+you're on the latest build. Nothing else to do — and nothing runs on your
+computer.
 
-1. **expo.dev → Account → Settings → Access tokens → Create token.** Copy it.
-2. In the GitHub repo: **Settings → Secrets and variables → Actions → New
-   repository secret.** Name it `EXPO_TOKEN`, paste the token.
+## How it works (why no PC is needed)
 
-That's it. Every push now publishes to the `preview` branch, and Expo Go
-shows the latest whenever you open the project. (Until the secret exists, the
-workflow skips itself so pushes never fail.)
+- `npm run start:tunnel` serves the bundle **from your PC** — that's why it
+  needed the computer on.
+- **EAS Update** serves the bundle **from Expo's cloud** instead. GitHub
+  Actions builds and uploads it on push; Expo Go downloads it. Your PC is
+  out of the loop entirely.
 
-## Which preview should I use?
+## Two previews, two jobs
 
-- **This (EAS Update / Expo Go)** — runs the *real* app: Skia board, audio,
-  every screen, real feel. Needs the one-time Expo login above. Best for
-  playtesting the actual game.
-- **Web preview (`docs/`)** — a lightweight always-on browser mockup, no
-  login. Best for a quick look or sharing a link. See `docs/README.md`.
+| Preview | Runs | Setup |
+|---|---|---|
+| **EAS Update → Expo Go** | the **real app** | this file — one token, once |
+| **Web page** (`docs/`) | faithful browser mockup | a free static host (see `docs/README.md`) |
 
-Use both: EAS Update to actually play, the web page for a zero-friction peek.
+## Troubleshooting (all checkable from a phone)
 
-## Troubleshooting
-
-- **"No compatible build found" in Expo Go** — the update's SDK must match
-  Expo Go. This project targets SDK 54; keep Expo Go updated on the App Store.
-- **CI job skipped** — you haven't added `EXPO_TOKEN` yet (see above).
-- **`eas update` says project not configured** — re-run `npx eas-cli init`.
+- **Actions run skipped** — the `EXPO_TOKEN` secret isn't set yet (step 3).
+- **"No compatible version" in Expo Go** — update Expo Go on the App Store;
+  this project targets SDK 54.
+- **Workflow failed on "Link the Expo project"** — open the failed run's log
+  from the Actions tab; it almost always means the token is invalid or
+  expired. Recreate it (step 2) and update the secret.
+- **Project not in Expo Go's Projects tab** — make sure you're signed into
+  Expo Go with the *same* account that owns the token.
