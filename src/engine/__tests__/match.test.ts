@@ -1,5 +1,12 @@
 import { findMatches, hasAnyMatch } from '../match';
 import { boardFromRows } from './helpers';
+import type { DetectedMatch, TileColor } from '../types';
+
+function matchOf(matches: DetectedMatch[], color: TileColor): DetectedMatch {
+  const m = matches.find((x) => x.color === color);
+  if (!m) throw new Error(`no ${color} match found`);
+  return m;
+}
 
 describe('match detection', () => {
   test('detects a horizontal match-3', () => {
@@ -45,26 +52,48 @@ describe('match detection', () => {
     expect(run.special).toBe('prism');
   });
 
-  test('detects an L shape and marks a bomb', () => {
+  test('detects an L shape (length 5) and marks a bomb', () => {
+    // moonpetal: row0 cols0-2 (horizontal 3) + col0 rows0-2 (vertical 3),
+    // sharing the corner (0,0) => 5 unique cells, an L.
     const b = boardFromRows([
       'mmmvr',
-      'vmurv',
-      'rmvms',
-      'smvur',
+      'mvsur',
+      'mrvsu',
+      'suvur',
     ]);
-    // moonpetals: (0,0)(0,1)(0,2) horizontal + (0,0)(1,0)(2,0)? No, (1,0)=v not m.
-    // Redesign: L at top-left
-    const b2 = boardFromRows([
-      'mmmvr',
-      'muvrv',
-      'muurs',
-      'muvur',
-    ]);
-    const matches = findMatches(b2);
-    const m = matches.find((x) => x.color === 'moonpetal' && x.shape !== 'line');
+    const m = findMatches(b).find(
+      (x) => x.color === 'moonpetal' && x.shape !== 'line',
+    );
     expect(m).toBeDefined();
-    expect(m!.length).toBeGreaterThanOrEqual(5);
+    expect(m!.length).toBe(5);
     expect(m!.special).toBe('bomb');
+  });
+
+  test('an L/T of length 6 marks a cross', () => {
+    // moonpetal: row0 cols0-3 (horizontal 4) + col0 rows0-2 (vertical 3),
+    // sharing the corner (0,0) => 6 unique cells.
+    const b = boardFromRows([
+      'mmmmv',
+      'mvsur',
+      'mrvsu',
+    ]);
+    const m = matchOf(findMatches(b), 'moonpetal');
+    expect(m.shape).not.toBe('line');
+    expect(m.length).toBe(6);
+    expect(m.special).toBe('cross');
+  });
+
+  test('an L/T of length 7 marks a nova', () => {
+    // horizontal 4 + vertical 4 sharing the corner => 7 unique cells.
+    const b = boardFromRows([
+      'mmmmv',
+      'mvsur',
+      'mrvsu',
+      'msuvr',
+    ]);
+    const m = matchOf(findMatches(b), 'moonpetal');
+    expect(m.length).toBe(7);
+    expect(m.special).toBe('nova');
   });
 
   test('hasAnyMatch returns false on a match-free board', () => {

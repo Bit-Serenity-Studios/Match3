@@ -166,7 +166,12 @@ function specialForShape(
     if (length === 4) return orientation === 'H' ? 'lineV' : 'lineH';
     return undefined;
   }
-  // L or T (length >= 5)
+  // L or T. The bigger the corner match, the stronger the reward:
+  //   5  -> bomb  (3x3 area)
+  //   6  -> cross (full row + full column)
+  //   7+ -> nova  (5x5 area)
+  if (length >= 7) return 'nova';
+  if (length === 6) return 'cross';
   return 'bomb';
 }
 

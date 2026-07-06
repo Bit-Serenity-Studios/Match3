@@ -31,6 +31,22 @@ describe('special activations', () => {
     const vialCount = 5; // one 'v' per row in this diagonal board
     expect(cells.length).toBeGreaterThanOrEqual(vialCount);
   });
+
+  test('cross clears the full row and full column (deduped)', () => {
+    const cells = cellsClearedByActivation(b, { row: 2, col: 3 }, 'cross');
+    // 5 (row) + 5 (col) - 1 shared = 9, no duplicates.
+    expect(cells).toHaveLength(9);
+    expect(cells.every((c) => c.row === 2 || c.col === 3)).toBe(true);
+    const keys = new Set(cells.map((c) => `${c.row},${c.col}`));
+    expect(keys.size).toBe(cells.length);
+  });
+
+  test('nova clears a 5x5 area', () => {
+    // centered on a 5x5 board => whole board.
+    expect(cellsClearedByActivation(b, { row: 2, col: 2 }, 'nova')).toHaveLength(25);
+    // clipped at a corner => 3x3.
+    expect(cellsClearedByActivation(b, { row: 0, col: 0 }, 'nova')).toHaveLength(9);
+  });
 });
 
 describe('special+special combos', () => {
@@ -62,6 +78,26 @@ describe('special+special combos', () => {
       { at: { row: 2, col: 2 }, kind: 'prism', color: 'moonpetal' },
       { at: { row: 2, col: 3 }, kind: 'prism', color: 'vial' },
     );
+    expect(c).toHaveLength(25);
+  });
+
+  test('cross + cross clears both cells\' rows and columns', () => {
+    const c = comboClears(
+      b,
+      { at: { row: 1, col: 1 }, kind: 'cross', color: 'moonpetal' },
+      { at: { row: 3, col: 3 }, kind: 'cross', color: 'vial' },
+    );
+    // rows {1,3} (10) + cols {1,3} (10) - 4 shared corners = 16.
+    expect(c).toHaveLength(16);
+  });
+
+  test('a nova combo dominates via the union default (5x5)', () => {
+    const c = comboClears(
+      b,
+      { at: { row: 2, col: 2 }, kind: 'nova', color: 'moonpetal' },
+      { at: { row: 2, col: 3 }, kind: 'bomb', color: 'vial' },
+    );
+    // nova centered on 5x5 already covers the whole board.
     expect(c).toHaveLength(25);
   });
 });

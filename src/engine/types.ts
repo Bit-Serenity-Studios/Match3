@@ -5,7 +5,13 @@ export type TileColor =
   | 'resin'
   | 'mushroom';
 
-export type SpecialKind = 'lineH' | 'lineV' | 'bomb' | 'prism';
+export type SpecialKind =
+  | 'lineH'
+  | 'lineV'
+  | 'bomb'
+  | 'cross'
+  | 'nova'
+  | 'prism';
 
 export type BlockerKind = 'vine' | 'frostGlass' | 'stoneRune' | 'ivy';
 

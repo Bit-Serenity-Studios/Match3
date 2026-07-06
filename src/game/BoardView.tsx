@@ -602,6 +602,10 @@ function specialGlyph(s: string): string {
       return '│';
     case 'bomb':
       return '✸';
+    case 'cross':
+      return '✚';
+    case 'nova':
+      return '✺';
     case 'prism':
       return '◆';
     default:

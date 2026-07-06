@@ -21,9 +21,18 @@ export function useTileArt(): TileArt {
   const bomb = useSVG(require('../../assets/art/fluent-emoji-flat/bomb.svg'));
   const bolt = useSVG(require('../../assets/art/fluent-emoji-flat/high-voltage.svg'));
   const rainbow = useSVG(require('../../assets/art/fluent-emoji-flat/rainbow.svg'));
+  const collision = useSVG(require('../../assets/art/fluent-emoji-flat/collision.svg'));
+  const sparkles = useSVG(require('../../assets/art/fluent-emoji-flat/sparkles.svg'));
 
   return {
     tiles: { moonpetal, vial, runestone, resin, mushroom },
-    specials: { bomb, lineH: bolt, lineV: bolt, prism: rainbow },
+    specials: {
+      bomb,
+      lineH: bolt,
+      lineV: bolt,
+      cross: collision,
+      nova: sparkles,
+      prism: rainbow,
+    },
   };
 }
