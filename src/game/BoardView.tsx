@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Canvas, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
+import { Canvas, ImageSVG, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
 import type { BoardSnapshot, CellPos, Tile } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
 import { palette } from '../theme';
 import { getTile, idx, isPlayable } from '../engine/board';
 import { useProfile } from '../state/profile';
+import { useTileArt, type TileArt } from './tileArt';
 
 interface Props {
   board: BoardSnapshot;
@@ -74,6 +75,7 @@ export function BoardView({
 }: Props) {
   const cellSize = size / Math.max(board.width, board.height);
   const boardPx = cellSize * board.width;
+  const art = useTileArt();
 
   const startRef = useRef<CellPos | null>(null);
 
@@ -251,14 +253,25 @@ export function BoardView({
                     height={w - 8}
                     r={6}
                     color={TILE_HEX[t.color]}
+                    opacity={0.32}
                   />
-                  <Text
-                    x={x + w / 2 - 8}
-                    y={y + w / 2 + 8}
-                    text={TILE_GLYPH[t.color]}
-                    font={glyphFont}
-                    color={palette.bgDeep}
-                  />
+                  {art.tiles[t.color] ? (
+                    <ImageSVG
+                      svg={art.tiles[t.color]}
+                      x={x + w * 0.12}
+                      y={y + w * 0.12}
+                      width={w * 0.76}
+                      height={w * 0.76}
+                    />
+                  ) : (
+                    <Text
+                      x={x + w / 2 - 8}
+                      y={y + w / 2 + 8}
+                      text={TILE_GLYPH[t.color]}
+                      font={glyphFont}
+                      color={palette.parchment}
+                    />
+                  )}
                 </>
               )}
               {showTileHere && t?.blocker && (
@@ -273,13 +286,23 @@ export function BoardView({
                 />
               )}
               {showTileHere && t?.special && (
-                <Text
-                  x={x + w - 14}
-                  y={y + 14}
-                  text={specialGlyph(t.special)}
-                  font={specialFont}
-                  color={palette.parchment}
-                />
+                art.specials[t.special] ? (
+                  <ImageSVG
+                    svg={art.specials[t.special]}
+                    x={x + w - w * 0.42 - 2}
+                    y={y + 2}
+                    width={w * 0.42}
+                    height={w * 0.42}
+                  />
+                ) : (
+                  <Text
+                    x={x + w - 14}
+                    y={y + 14}
+                    text={specialGlyph(t.special)}
+                    font={specialFont}
+                    color={palette.parchment}
+                  />
+                )
               )}
             </React.Fragment>
           );
@@ -295,6 +318,7 @@ export function BoardView({
               progress={swapT}
               cellSize={cellSize}
               scale={1 + Math.sin(swapRawT * Math.PI) * 0.08}
+              art={art}
             />
             <MovingTile
               tile={swapAnim.tileB}
@@ -303,6 +327,7 @@ export function BoardView({
               progress={swapT}
               cellSize={cellSize}
               scale={1 + Math.sin(swapRawT * Math.PI) * 0.08}
+              art={art}
             />
           </>
         )}
@@ -319,6 +344,7 @@ interface MovingTileProps {
   progress: number;
   cellSize: number;
   scale: number;
+  art: TileArt;
 }
 
 function MovingTile({
@@ -328,6 +354,7 @@ function MovingTile({
   progress,
   cellSize,
   scale,
+  art,
 }: MovingTileProps): React.ReactElement | null {
   if (!tile?.color) return null;
   const sx = fromCell.col * cellSize;
@@ -338,6 +365,8 @@ function MovingTile({
   const cy = sy + (ey - sy) * progress + cellSize / 2;
   const w = (cellSize - 6) * scale;
   const inner = (cellSize - 14) * scale;
+  const svg = art.tiles[tile.color];
+  const iconSize = (cellSize - 6) * 0.76 * scale;
   return (
     <>
       <RoundedRect
@@ -355,14 +384,25 @@ function MovingTile({
         height={inner}
         r={6}
         color={TILE_HEX[tile.color]}
+        opacity={0.32}
       />
-      <Text
-        x={cx - 8}
-        y={cy + 8}
-        text={TILE_GLYPH[tile.color]}
-        font={glyphFont}
-        color={palette.bgDeep}
-      />
+      {svg ? (
+        <ImageSVG
+          svg={svg}
+          x={cx - iconSize / 2}
+          y={cy - iconSize / 2}
+          width={iconSize}
+          height={iconSize}
+        />
+      ) : (
+        <Text
+          x={cx - 8}
+          y={cy + 8}
+          text={TILE_GLYPH[tile.color]}
+          font={glyphFont}
+          color={palette.parchment}
+        />
+      )}
     </>
   );
 }
