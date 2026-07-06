@@ -21,17 +21,22 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-    # Resolve the token from a repo SECRET, or fall back to a repo VARIABLE
-    # if it was added there by mistake.
+    # Accept the Expo token under any of the names that have been used so
+    # far: EXPO_TOKEN, the repo secret EXPOAUTH, or the org secret
+    # EXPOGO_AUTH_TOKEN. First non-empty wins.
     env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
+      EXPO_TOKEN: >-
+        ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN
+            || (secrets.EXPOAUTH != '' && secrets.EXPOAUTH
+                || secrets.EXPOGO_AUTH_TOKEN) }}
     steps:
       - name: Diagnose token presence
         run: |
-          echo "Repo SECRET named EXPO_TOKEN present?   ${{ secrets.EXPO_TOKEN != '' }}"
-          echo "Repo VARIABLE named EXPO_TOKEN present? ${{ vars.EXPO_TOKEN != '' }}"
+          echo "EXPO_TOKEN present?        ${{ secrets.EXPO_TOKEN != '' }}"
+          echo "EXPOAUTH present?          ${{ secrets.EXPOAUTH != '' }}"
+          echo "EXPOGO_AUTH_TOKEN present? ${{ secrets.EXPOGO_AUTH_TOKEN != '' }}"
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::No EXPO_TOKEN found. Add it at Settings → Secrets and variables → Actions → the *Secrets* tab → New repository secret, named exactly EXPO_TOKEN."
+            echo "::error::No Expo token found under EXPO_TOKEN, EXPOAUTH, or EXPOGO_AUTH_TOKEN."
             exit 1
           fi
           echo "Token resolved (length ${#EXPO_TOKEN}). Proceeding."
