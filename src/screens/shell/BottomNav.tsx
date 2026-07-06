@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
 import { useUI, type Screen } from '../../state/ui';
 import { useProfile, UNLOCK_HUB_AT } from '../../state/profile';
+import { click } from '../../audio/click';
 
 type Tab = 'store' | 'covens' | 'home' | 'moonrise' | 'grimoire';
 
@@ -53,7 +54,7 @@ export function BottomNav(): React.ReactElement {
           <Pressable
             key={t.id}
             style={[styles.tab, active && styles.tabActive]}
-            onPress={() => onTab(t.id)}
+            onPress={click(() => onTab(t.id))}
           >
             <Text style={[styles.glyph, active && styles.glyphActive]}>{t.glyph}</Text>
             <Text style={[styles.label, active && styles.labelActive]}>{t.label}</Text>

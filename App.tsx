@@ -20,6 +20,7 @@ import { useUI } from './src/state/ui';
 import { useTelemetry } from './src/telemetry/logger';
 import { useRetention } from './src/state/retention';
 import { useProfile } from './src/state/profile';
+import { initSoundEngine, sfx } from './src/audio/soundEffects';
 
 const APP_VERSION = '0.5.0';
 
@@ -34,6 +35,7 @@ export default function App(): React.ReactElement {
   useEffect(() => {
     startSession(Date.now(), APP_VERSION);
     refreshCalendar(Date.now());
+    initSoundEngine().then(() => sfx('splash'));
     return () => {
       endSession(Date.now());
     };

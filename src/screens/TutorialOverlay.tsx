@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { click } from '../audio/click';
 
 interface Props {
   onDone(): void;
@@ -49,11 +50,11 @@ export function TutorialOverlay({ onDone }: Props): React.ReactElement {
         <Text style={styles.body}>{cur.body}</Text>
         <Pressable
           style={styles.primary}
-          onPress={() => (isLast ? onDone() : setStep(step + 1))}
+          onPress={click(() => (isLast ? onDone() : setStep(step + 1)))}
         >
           <Text style={styles.primaryLabel}>{cur.action}</Text>
         </Pressable>
-        <Pressable style={styles.skip} onPress={onDone}>
+        <Pressable style={styles.skip} onPress={click(onDone)}>
           <Text style={styles.skipLabel}>Skip tutorial</Text>
         </Pressable>
       </View>

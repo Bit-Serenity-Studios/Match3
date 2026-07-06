@@ -13,6 +13,7 @@ import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { ShellFrame } from './shell/ShellFrame';
 import { LEVELS } from '../levels/catalog';
+import { click } from '../audio/click';
 
 /**
  * The home landing screen. Structure inspired by the classic
@@ -97,7 +98,7 @@ export function HomeHubScreen(): React.ReactElement {
         <View style={styles.stage}>
           {/* Left card — Learn the Basics (tutorial trigger) */}
           <View style={styles.leftCol}>
-            <Pressable style={styles.miniCard} onPress={startBasics}>
+            <Pressable style={styles.miniCard} onPress={click(startBasics)}>
               <Text style={styles.miniCardGlyph}>📜</Text>
               <Text style={styles.miniCardTitle}>
                 Learn the{'\n'}Basics
@@ -105,7 +106,7 @@ export function HomeHubScreen(): React.ReactElement {
             </Pressable>
             <Pressable
               style={[styles.miniCard, { marginTop: spacing.sm }]}
-              onPress={goToDaily}
+              onPress={click(goToDaily)}
             >
               <Text style={styles.miniCardGlyph}>☕</Text>
               <Text style={styles.miniCardTitle}>Daily{'\n'}Brew</Text>
@@ -123,7 +124,7 @@ export function HomeHubScreen(): React.ReactElement {
             <Text style={styles.heroSub}>Solo Journey</Text>
 
             <Animated.View style={[styles.playBtnWrap, { transform: [{ scale: pulse }] }]}>
-              <Pressable style={styles.playBtn} onPress={goToGame}>
+              <Pressable style={styles.playBtn} onPress={click(goToGame)}>
                 <Text style={styles.playLabel}>PLAY</Text>
               </Pressable>
             </Animated.View>
@@ -131,7 +132,7 @@ export function HomeHubScreen(): React.ReactElement {
         </View>
 
         {/* Secondary — online mode */}
-        <Pressable style={styles.onlineCard} onPress={goToMoonrise}>
+        <Pressable style={styles.onlineCard} onPress={click(goToMoonrise)}>
           <View style={styles.onlineIcon}>
             <Text style={styles.onlineGlyph}>⚔️</Text>
           </View>

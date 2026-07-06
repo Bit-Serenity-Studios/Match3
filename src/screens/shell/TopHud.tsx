@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
 import { useProfile } from '../../state/profile';
 import { useUI } from '../../state/ui';
+import { click } from '../../audio/click';
 
 /**
  * Persistent top HUD — avatar/level, moonstone rank, streak, coins, gems,
@@ -21,7 +22,7 @@ export function TopHud(): React.ReactElement {
 
   return (
     <View style={styles.root}>
-      <Pressable style={styles.avatar} onPress={goToMenu}>
+      <Pressable style={styles.avatar} onPress={click(goToMenu)}>
         <Text style={styles.avatarGlyph}>🌙</Text>
         <View style={styles.avatarBadge}>
           <Text style={styles.avatarBadgeText}>{level}</Text>
@@ -32,7 +33,7 @@ export function TopHud(): React.ReactElement {
       <Chip glyph="🪙" value={fmt(coins)} tint={palette.candlelight} />
       <Chip glyph="⭐" value={fmt(gems)} tint={palette.purple} />
 
-      <Pressable style={styles.menuBtn} onPress={goToMenu}>
+      <Pressable style={styles.menuBtn} onPress={click(goToMenu)}>
         <Text style={styles.menuGlyph}>≡</Text>
       </Pressable>
     </View>

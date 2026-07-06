@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
 import { CONTINUE_EXTRA_MOVES, priceForContinue } from '../monetization/continue';
+import { click } from '../audio/click';
 import type { ContinueSummary } from '../monetization/continue';
 import { useMonetization } from '../state/monetization';
 import { useProfile } from '../state/profile';
@@ -73,7 +74,7 @@ export function ContinueScreen({
       <Pressable
         style={[styles.buyBtn, !canAfford && styles.disabled]}
         disabled={!canAfford}
-        onPress={onContinue}
+        onPress={click(onContinue)}
       >
         <Text style={styles.buyTitle}>+{CONTINUE_EXTRA_MOVES} Moves</Text>
         <Text style={styles.buyPrice}>{price} ⭐</Text>
@@ -85,12 +86,12 @@ export function ContinueScreen({
       )}
 
       {onWatchAd && watchAdAllowed && (
-        <Pressable style={styles.adBtn} onPress={onWatchAd}>
+        <Pressable style={styles.adBtn} onPress={click(onWatchAd)}>
           <Text style={styles.adLabel}>Watch ad · +1 life</Text>
         </Pressable>
       )}
 
-      <Pressable style={styles.giveUpBtn} onPress={onGiveUp}>
+      <Pressable style={styles.giveUpBtn} onPress={click(onGiveUp)}>
         <Text style={styles.giveUpLabel}>Give up</Text>
       </Pressable>
     </View>

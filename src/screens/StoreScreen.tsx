@@ -16,6 +16,7 @@ import {
 } from '../monetization/catalog';
 import type { ProductDef } from '../monetization/types';
 import { PIGGY_MAX_GEMS } from '../monetization/piggyBank';
+import { click } from '../audio/click';
 
 interface CardProps {
   product: ProductDef;
@@ -32,7 +33,7 @@ function ProductCard({ product, onBuy, disabled }: CardProps): React.ReactElemen
         product.badge === 'anchor' && styles.cardAnchor,
         disabled && styles.cardDisabled,
       ]}
-      onPress={onBuy}
+      onPress={click(onBuy)}
       disabled={disabled}
     >
       {product.badge && (
@@ -124,7 +125,7 @@ export function StoreScreen(): React.ReactElement {
           <Text style={typography.h1}>Store</Text>
           <Text style={typography.small}>Support the apothecary.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={() => goToHub()}>
+        <Pressable style={styles.backBtn} onPress={click(() => goToHub())}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>

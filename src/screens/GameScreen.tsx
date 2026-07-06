@@ -34,6 +34,8 @@ import { summarizeFail, CONTINUE_EXTRA_MOVES, priceForContinue } from '../moneti
 import { getMonetization } from '../monetization/singleton';
 import { track } from '../telemetry/logger';
 import { useRetention } from '../state/retention';
+import { sfx } from '../audio/soundEffects';
+import { click } from '../audio/click';
 import { TutorialOverlay } from './TutorialOverlay';
 
 function normalizeGrantsForTelemetry(
@@ -133,6 +135,7 @@ export function GameScreen() {
   const toastCounter = useRef(0);
   const pushToast = useCallback((text: string) => {
     const id = ++toastCounter.current;
+    sfx('toast');
     setToasts((ts) => [...ts, { id, text }]);
     setTimeout(() => {
       setToasts((ts) => ts.filter((t) => t.id !== id));
@@ -169,6 +172,7 @@ export function GameScreen() {
       if (pendingSwap) return; // don't queue swaps mid-animation
       const r = applySwap(state, a, b);
       if (!r.accepted) {
+        sfx('reject');
         setHighlight([a, b]);
         setRejectedSwap([a, b]);
         setTimeout(() => setHighlight(undefined), 260);
@@ -178,6 +182,7 @@ export function GameScreen() {
       const cascades = r.events.filter((e) => e.t === 'cascade').length;
       // Animate the swap glide over the CURRENT board, then commit the
       // engine's result state so the cascade appears at once with a flash.
+      sfx('swap');
       setPendingSwap([a, b]);
       setTimeout(() => {
         setPendingSwap(null);
@@ -195,6 +200,7 @@ export function GameScreen() {
               : cascades >= 1
                 ? 'Nice match!'
                 : 'Match!';
+        sfx(cascades >= 1 ? 'chain' : 'match');
         pushToast(label);
         if (cascades >= 2) {
           setTimeout(() => pushToast('+combo'), 180);
@@ -204,6 +210,7 @@ export function GameScreen() {
           const attemptsUsed =
             useMonetization.getState().continueAttemptsThisLevel;
           if (r.next.status === 'won') {
+            setTimeout(() => sfx('win'), 400);
             const rew = rewardsFor(r.next);
             registerWin(r.next.levelId, rew);
             streakWin(r.next.levelId);
@@ -226,6 +233,7 @@ export function GameScreen() {
               continuePurchased: attemptsUsed > 0,
             });
           } else if (getFlags().continueScreen) {
+            sfx('lose');
             openContinue();
             track('level_failed', {
               levelId: r.next.levelId,
@@ -237,6 +245,7 @@ export function GameScreen() {
               turnsTaken: r.next.turn,
             });
           } else {
+            sfx('lose');
             registerLoss(r.next.levelId);
             streakLoss();
             track('level_finished', {
@@ -380,11 +389,11 @@ export function GameScreen() {
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Pressable style={styles.hubBtn} onPress={goToMenu}>
+          <Pressable style={styles.hubBtn} onPress={click(goToMenu)}>
             <Text style={styles.hubBtnLabel}>Menu</Text>
           </Pressable>
           {hubUnlocked && (
-            <Pressable style={styles.hubBtn} onPress={() => goToHub()}>
+            <Pressable style={styles.hubBtn} onPress={click(() => goToHub())}>
               <Text style={styles.hubBtnLabel}>Hub</Text>
             </Pressable>
           )}
@@ -465,13 +474,13 @@ export function GameScreen() {
             </Text>
           )}
           {!isLastLevel ? (
-            <Pressable style={styles.btn} onPress={onNext}>
+            <Pressable style={styles.btn} onPress={click(onNext)}>
               <Text style={styles.btnLabel}>
                 {hubUnlocked ? 'Back to Apothecary' : 'Next level'}
               </Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.btn} onPress={onRetry}>
+            <Pressable style={styles.btn} onPress={click(onRetry)}>
               <Text style={styles.btnLabel}>Play again</Text>
             </Pressable>
           )}
@@ -496,7 +505,7 @@ export function GameScreen() {
           <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
             The kettle sighed. Try again?
           </Text>
-          <Pressable style={styles.btn} onPress={onRetry}>
+          <Pressable style={styles.btn} onPress={click(onRetry)}>
             <Text style={styles.btnLabel}>Retry</Text>
           </Pressable>
           {pendingOfferSku && (

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii, typography } from '../theme';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
+import { click } from '../audio/click';
 
 /**
  * First-launch Terms of Service + Privacy acceptance. Full-screen modal
@@ -37,7 +38,7 @@ export function TosModal(): React.ReactElement {
 
         <Pressable
           style={styles.accept}
-          onPress={() => acceptTos(Date.now())}
+          onPress={click(() => acceptTos(Date.now()))}
         >
           <Text style={styles.acceptLabel}>Accept</Text>
         </Pressable>

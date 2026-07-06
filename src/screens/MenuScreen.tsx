@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { useProfile, UNLOCK_HUB_AT } from '../state/profile';
 import { useUI } from '../state/ui';
+import { click } from '../audio/click';
 
 /**
  * Main menu. Boot lands here on every launch. Buttons progressively unlock
@@ -39,22 +40,22 @@ export function MenuScreen(): React.ReactElement {
       </Text>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Pressable style={[styles.primaryBtn]} onPress={enter}>
+        <Pressable style={[styles.primaryBtn]} onPress={click(enter)}>
           <Text style={styles.primaryLabel}>
             {isReturning ? 'Continue' : 'Play'}
           </Text>
         </Pressable>
 
-        <Pressable style={styles.secondaryBtn} onPress={goToSettings}>
+        <Pressable style={styles.secondaryBtn} onPress={click(goToSettings)}>
           <Text style={styles.secondaryLabel}>Settings</Text>
         </Pressable>
 
         <View style={styles.footer}>
-          <Pressable onPress={goToPrivacy}>
+          <Pressable onPress={click(goToPrivacy)}>
             <Text style={styles.footerLink}>Privacy Policy</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={goToAbout}>
+          <Pressable onPress={click(goToAbout)}>
             <Text style={styles.footerLink}>About</Text>
           </Pressable>
         </View>
