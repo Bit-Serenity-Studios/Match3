@@ -12,6 +12,7 @@ import { withDifficulty } from '../engine/difficulty';
 import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { LEVELS, getLevelByIndex, isEndlessIndex } from '../levels/catalog';
 import {
   UNLOCK_HUB_AT,
@@ -492,15 +493,13 @@ export function GameScreen() {
             </Text>
           )}
           {!isLastLevel ? (
-            <Pressable style={styles.btn} onPress={click(onNext)}>
-              <Text style={styles.btnLabel}>
-                {hubUnlocked ? 'Back to Apothecary' : 'Next level'}
-              </Text>
-            </Pressable>
+            <WoodButton
+              label={hubUnlocked ? 'Back to Apothecary' : 'Next level'}
+              onPress={click(onNext)}
+              labelStyle={styles.btnLabel}
+            />
           ) : (
-            <Pressable style={styles.btn} onPress={click(onRetry)}>
-              <Text style={styles.btnLabel}>Play again</Text>
-            </Pressable>
+            <WoodButton label="Play again" onPress={click(onRetry)} labelStyle={styles.btnLabel} />
           )}
         </View>
       )}
@@ -523,9 +522,7 @@ export function GameScreen() {
           <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
             The kettle sighed. Try again?
           </Text>
-          <Pressable style={styles.btn} onPress={click(onRetry)}>
-            <Text style={styles.btnLabel}>Retry</Text>
-          </Pressable>
+          <WoodButton label="Retry" onPress={click(onRetry)} labelStyle={styles.btnLabel} />
           {pendingOfferSku && (
             <Pressable
               style={[styles.btn, { backgroundColor: palette.emerald, marginTop: spacing.sm }]}

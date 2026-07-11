@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { useProfile } from '../state/profile';
 import { useRetention } from '../state/retention';
 import { useUI } from '../state/ui';
@@ -75,15 +76,12 @@ export function DailyScreen(): React.ReactElement {
             );
           })}
         </View>
-        <Pressable
-          style={[styles.claimBtn, !canLogin && styles.disabled]}
-          disabled={!canLogin}
+        <WoodButton
+          label={canLogin ? `Claim day ${idx + 1}` : 'Come back tomorrow'}
           onPress={click(doClaim)}
-        >
-          <Text style={styles.claimLabel}>
-            {canLogin ? `Claim day ${idx + 1}` : 'Come back tomorrow'}
-          </Text>
-        </Pressable>
+          disabled={!canLogin}
+          labelStyle={styles.claimLabel}
+        />
         <Text style={styles.hint}>
           Completed cycles: {cal.completedCycles}. Miss a night and the ritual resets.
         </Text>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii, typography } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { click } from '../audio/click';
 
 interface Props {
@@ -32,9 +33,11 @@ export function MilestoneOverlay({
         </View>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
-        <Pressable style={styles.action} onPress={click(onAction)}>
-          <Text style={styles.actionLabel}>{actionLabel}</Text>
-        </Pressable>
+        <WoodButton
+          label={actionLabel}
+          onPress={click(onAction)}
+          labelStyle={styles.actionLabel}
+        />
       </View>
     </View>
   );

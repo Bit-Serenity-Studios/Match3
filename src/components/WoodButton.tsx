@@ -28,16 +28,24 @@ export function WoodButton({
   onPress,
   style,
   labelStyle,
+  disabled,
 }: {
   label: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
+  disabled?: boolean;
 }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.btn, pressed && styles.pressed, style]}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.btn,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+        style,
+      ]}
     >
       <Text style={[styles.label, labelStyle]}>{label}</Text>
     </Pressable>
@@ -61,6 +69,9 @@ const styles = StyleSheet.create({
   pressed: {
     borderBottomWidth: 3,
     marginTop: 3,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   label: {
     color: WOOD.ink,

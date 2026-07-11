@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii, typography } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { useUI } from '../state/ui';
 import { click } from '../audio/click';
 
@@ -53,9 +54,11 @@ export function PlaceholderScreen({
           <Text style={styles.badgeText}>Coming Soon</Text>
         </View>
         {cta && (
-          <Pressable style={styles.cta} onPress={click(cta.onPress)}>
-            <Text style={styles.ctaLabel}>{cta.label}</Text>
-          </Pressable>
+          <WoodButton
+            label={cta.label}
+            onPress={click(cta.onPress)}
+            labelStyle={styles.ctaLabel}
+          />
         )}
       </ScrollView>
     </View>

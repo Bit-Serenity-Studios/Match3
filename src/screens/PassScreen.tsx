@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { useMonetization, currentPassLevel } from '../state/monetization';
 import { useUI } from '../state/ui';
 import { CHALLENGES, PASS_REWARDS, XP_PER_LEVEL, PASS_LEVELS } from '../monetization/battlePass';
@@ -51,11 +52,11 @@ export function PassScreen(): React.ReactElement {
       </Text>
 
       {!pass.premiumUnlocked && (
-        <Pressable style={styles.unlockBtn} onPress={buyPremium}>
-          <Text style={styles.unlockLabel}>
-            Unlock premium · {BATTLE_PASS.displayPrice}
-          </Text>
-        </Pressable>
+        <WoodButton
+          label={`Unlock premium · ${BATTLE_PASS.displayPrice}`}
+          onPress={buyPremium}
+          labelStyle={styles.unlockLabel}
+        />
       )}
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
