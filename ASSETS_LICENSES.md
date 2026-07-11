@@ -13,6 +13,7 @@ go here in the same commit.
 | `assets/art/noto-emoji/` (12 SVGs) | Google Noto Emoji (SVG artwork), via `@iconify-json/noto@1.2.7` (npm) | Apache 2.0 | ✅ Yes, incl. selling | ❌ No user-facing credit needed. License text must ship with the app. | ❌ None |
 | `assets/sounds/` (9 SFX WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
 | `assets/music/` (10 ambient WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
+| Kenney UI accents in `docs/index.html` (wooden button + round frame, embedded base64) | Kenney "UI Pack - Adventure" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl) | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 
 ## What we must do to stay compliant when selling the app
 
@@ -90,10 +91,11 @@ Add icon names to the `FLUENT_WANTED` / `NOTO_WANTED` lists in
 
 ## Sources rejected and why
 
-- **kenney.nl / OpenGameArt.org** — CC0 assets (ideal license) but both
-  hosts are unreachable from this build environment's network policy.
-  Kenney packs remain a good future addition if downloaded manually —
-  everything Kenney publishes is CC0.
+- **kenney.nl / OpenGameArt.org** — CC0 assets (ideal license). kenney.nl
+  is unreachable directly from this build environment, so the packs were
+  mirrored into the private repo `Bit-Serenity-Studios/KennyNLAssets` and
+  are now used from there (see the Kenney row above). Everything Kenney
+  publishes is CC0 — no attribution, no copyleft, selling is fine.
 - **Twemoji** (CC BY 4.0) and **game-icons.net** (CC BY 3.0) — commercial
   use fine but requires *public attribution*, a string MIT/Apache don't
   have. Skipped to keep obligations minimal.
