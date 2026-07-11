@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Canvas, ImageSVG, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
+import { Canvas, Image, ImageSVG, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
 import type { BoardSnapshot, CellPos, Tile } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
 import { palette } from '../theme';
@@ -324,12 +324,13 @@ export function BoardView({
                     opacity={0.32}
                   />
                   {art.tiles[t.color] ? (
-                    <ImageSVG
-                      svg={art.tiles[t.color]}
+                    <Image
+                      image={art.tiles[t.color]}
                       x={x + w * 0.12}
                       y={y + w * 0.12}
                       width={w * 0.76}
                       height={w * 0.76}
+                      fit="contain"
                     />
                   ) : (
                     <Text
@@ -411,12 +412,13 @@ export function BoardView({
                       opacity={0.32}
                     />
                     {art.tiles[t.color] ? (
-                      <ImageSVG
-                        svg={art.tiles[t.color]}
+                      <Image
+                        image={art.tiles[t.color]}
                         x={x + w * 0.12}
                         y={y + w * 0.12}
                         width={w * 0.76}
                         height={w * 0.76}
+                        fit="contain"
                       />
                     ) : (
                       <Text
@@ -519,7 +521,7 @@ function MovingTile({
   const cy = sy + (ey - sy) * progress + cellSize / 2;
   const w = (cellSize - 6) * scale;
   const inner = (cellSize - 14) * scale;
-  const svg = art.tiles[tile.color];
+  const img = art.tiles[tile.color];
   const iconSize = (cellSize - 6) * 0.76 * scale;
   return (
     <>
@@ -540,13 +542,14 @@ function MovingTile({
         color={TILE_HEX[tile.color]}
         opacity={0.32}
       />
-      {svg ? (
-        <ImageSVG
-          svg={svg}
+      {img ? (
+        <Image
+          image={img}
           x={cx - iconSize / 2}
           y={cy - iconSize / 2}
           width={iconSize}
           height={iconSize}
+          fit="contain"
         />
       ) : (
         <Text

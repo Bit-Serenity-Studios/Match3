@@ -1,23 +1,23 @@
-import { useSVG, type SkSVG } from '@shopify/react-native-skia';
+import { useSVG, useImage, type SkSVG, type SkImage } from '@shopify/react-native-skia';
 import type { SpecialKind, TileColor } from '../engine/types';
 
 /**
- * Board art — Fluent Emoji (MIT, see ASSETS_LICENSES.md) loaded as Skia
- * SVG objects. One hook so BoardView stays clean. useSVG loads async;
- * entries are null until decoded, and BoardView falls back to the old
- * text glyphs for those first frames.
+ * Board art. Tiles are Kenney Puzzle Pack gems (CC0, see ASSETS_LICENSES.md)
+ * loaded as Skia images; specials are Fluent Emoji (MIT) SVGs. One hook so
+ * BoardView stays clean. Both load async; entries are null until decoded,
+ * and BoardView falls back to the text glyphs for those first frames.
  */
 export interface TileArt {
-  tiles: Record<TileColor, SkSVG | null>;
+  tiles: Record<TileColor, SkImage | null>;
   specials: Record<SpecialKind, SkSVG | null>;
 }
 
 export function useTileArt(): TileArt {
-  const moonpetal = useSVG(require('../../assets/art/fluent-emoji-flat/cherry-blossom.svg'));
-  const vial = useSVG(require('../../assets/art/fluent-emoji-flat/test-tube.svg'));
-  const runestone = useSVG(require('../../assets/art/fluent-emoji-flat/rock.svg'));
-  const resin = useSVG(require('../../assets/art/fluent-emoji-flat/honey-pot.svg'));
-  const mushroom = useSVG(require('../../assets/art/fluent-emoji-flat/mushroom.svg'));
+  const moonpetal = useImage(require('../../assets/art/kenney-gems/moonpetal.png'));
+  const vial = useImage(require('../../assets/art/kenney-gems/vial.png'));
+  const runestone = useImage(require('../../assets/art/kenney-gems/runestone.png'));
+  const resin = useImage(require('../../assets/art/kenney-gems/resin.png'));
+  const mushroom = useImage(require('../../assets/art/kenney-gems/mushroom.png'));
   const bomb = useSVG(require('../../assets/art/fluent-emoji-flat/bomb.svg'));
   const bolt = useSVG(require('../../assets/art/fluent-emoji-flat/high-voltage.svg'));
   const rainbow = useSVG(require('../../assets/art/fluent-emoji-flat/rainbow.svg'));

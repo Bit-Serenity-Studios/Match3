@@ -14,7 +14,7 @@ go here in the same commit.
 | `assets/sounds/` (9 SFX WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
 | `assets/music/` (10 ambient WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
 | Kenney UI accents in `docs/index.html` (wooden button + round frame, embedded base64) | Kenney "UI Pack - Adventure" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl) | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
-| Board tile gems in `docs/index.html` (5 glossy gems, embedded base64) | Kenney "Puzzle Pack" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl) | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
+| Board tile gems — `assets/art/kenney-gems/` (native app, 5 PNGs) + embedded base64 in `docs/index.html` (preview) | Kenney "Puzzle Pack" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl). Licence text: `assets/art/kenney-gems/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 
 ## What we must do to stay compliant when selling the app
 
