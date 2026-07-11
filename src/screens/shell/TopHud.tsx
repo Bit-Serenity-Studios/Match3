@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
 import { useProfile } from '../../state/profile';
 import { useUI } from '../../state/ui';
@@ -23,11 +23,17 @@ export function TopHud(): React.ReactElement {
 
   return (
     <View style={styles.root}>
-      <Pressable style={styles.avatar} onPress={click(goToProfile)}>
-        <Text style={styles.avatarGlyph}>🌙</Text>
-        <View style={styles.avatarBadge}>
-          <Text style={styles.avatarBadgeText}>{level}</Text>
-        </View>
+      <Pressable onPress={click(goToProfile)}>
+        <ImageBackground
+          source={require('../../assets/art/kenney-ui/round_brown.png')}
+          style={styles.avatar}
+          resizeMode="contain"
+        >
+          <Text style={styles.avatarGlyph}>🌙</Text>
+          <View style={styles.avatarBadge}>
+            <Text style={styles.avatarBadgeText}>{level}</Text>
+          </View>
+        </ImageBackground>
       </Pressable>
 
       <Chip glyph="🏵️" value={fmt(moonstones)} tint={palette.candlelight} />
@@ -69,12 +75,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.bgSurface2,
-    borderColor: palette.candlelightSoft,
-    borderWidth: 2,
+    // Kenney wooden round frame (CC0) provides the ring + cream centre.
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.xs,
