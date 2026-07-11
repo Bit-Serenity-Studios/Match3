@@ -9,6 +9,7 @@ import {
   Easing,
 } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { WoodButton } from '../components/WoodButton';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { ShellFrame } from './shell/ShellFrame';
@@ -131,9 +132,7 @@ export function HomeHubScreen(): React.ReactElement {
             <Text style={styles.heroSub}>Solo Journey</Text>
 
             <Animated.View style={[styles.playBtnWrap, { transform: [{ scale: pulse }] }]}>
-              <Pressable style={styles.playBtn} onPress={click(goToGame)}>
-                <Text style={styles.playLabel}>PLAY</Text>
-              </Pressable>
+              <WoodButton label="PLAY" onPress={click(goToGame)} labelStyle={styles.playLabel} />
             </Animated.View>
           </View>
         </View>

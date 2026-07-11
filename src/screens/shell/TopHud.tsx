@@ -25,7 +25,7 @@ export function TopHud(): React.ReactElement {
     <View style={styles.root}>
       <Pressable onPress={click(goToProfile)}>
         <ImageBackground
-          source={require('../../assets/art/kenney-ui/round_brown.png')}
+          source={require('../../../assets/art/kenney-ui/round_brown.png')}
           style={styles.avatar}
           resizeMode="contain"
         >
