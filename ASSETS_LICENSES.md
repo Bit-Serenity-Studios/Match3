@@ -11,8 +11,9 @@ go here in the same commit.
 |---|---|---|---|---|---|
 | `assets/art/fluent-emoji-flat/` (59 SVGs) | Microsoft Fluent Emoji, via `@iconify-json/fluent-emoji-flat@1.2.5` (npm) | MIT | ✅ Yes, incl. selling | ❌ No user-facing credit needed. License text must ship with the app. | ❌ None |
 | `assets/art/noto-emoji/` (12 SVGs) | Google Noto Emoji (SVG artwork), via `@iconify-json/noto@1.2.7` (npm) | Apache 2.0 | ✅ Yes, incl. selling | ❌ No user-facing credit needed. License text must ship with the app. | ❌ None |
-| `assets/sounds/` (9 SFX WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
-| `assets/music/` (10 ambient WAVs) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
+| `assets/sounds/` (9 SFX, `.mp3`) | Kenney "Interface Sounds / UI Audio / Impact Sounds / Music Jingles" via `Bit-Serenity-Studios/KennyNLAssets`, transcoded OGG→mp3 | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
+| `assets/music/*.wav` (10 ambient loops) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
+| `assets/music/kenney_*.mp3` (3 ambient loops) | Kenney "Music Loops" via `Bit-Serenity-Studios/KennyNLAssets`, transcoded OGG→mp3 | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 | Kenney UI accents in `docs/index.html` (wooden button + round frame, embedded base64) | Kenney "UI Pack - Adventure" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl) | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 | Board tile gems — `assets/art/kenney-gems/` (native app, 5 PNGs) + embedded base64 in `docs/index.html` (preview) | Kenney "Puzzle Pack" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl). Licence text: `assets/art/kenney-gems/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 
