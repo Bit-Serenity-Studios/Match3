@@ -914,7 +914,7 @@
             <div class="stat"><div class="sl">Moves</div><div class="sv" id="mvs">${app.moves}</div></div>
             <div class="stat obj"><div class="sl">Objective</div><div class="sv" id="objv">${LABEL[app.targetColor]} ${app.collected}/${app.target}</div></div>
           </div>
-          <div class="phint">Match <b>4</b> for a ⚡ power-up · chain matches for <b>combos</b></div>
+          <div class="phint">Match <b>4</b> to brew a ⚗️ <b>potion</b> · <b>5+</b> for a Grand Elixir</div>
           <div class="board-wrap">
             <div class="board" id="board" style="width:${boardW}px;height:${boardH}px">
               <div class="toast" id="toast"></div>
@@ -1035,7 +1035,7 @@
 
   function findMatches() {
     const hits = new Set();
-    const powerups = []; // runs of 4+ spawn a blast
+    const potions = []; // runs of 4+ brew a potion
     // horizontal runs
     for (let r = 0; r < H; r++) {
       let run = 1;
@@ -1045,7 +1045,7 @@
         else {
           if (run >= 3) {
             for (let k = c - run; k < c; k++) hits.add(r + "," + k);
-            if (run >= 4) powerups.push({ type: run >= 5 ? "nova" : "rocket", r, c: c - Math.ceil(run / 2), color: app.grid[r][c - 1].color });
+            if (run >= 4) potions.push({ tier: run >= 5 ? "grand" : "potion", r, c: c - Math.ceil(run / 2), color: app.grid[r][c - 1].color });
           }
           run = 1;
         }
@@ -1060,34 +1060,55 @@
         else {
           if (run >= 3) {
             for (let k = r - run; k < r; k++) hits.add(k + "," + c);
-            if (run >= 4) powerups.push({ type: run >= 5 ? "nova" : "rocket", r: r - Math.ceil(run / 2), c, color: app.grid[r - 1][c].color });
+            if (run >= 4) potions.push({ tier: run >= 5 ? "grand" : "potion", r: r - Math.ceil(run / 2), c, color: app.grid[r - 1][c].color });
           }
           run = 1;
         }
       }
     }
-    return { hits, powerups };
+    return { hits, potions };
   }
 
-  // Match-4 → a rocket that clears the whole row + column through the match.
-  // Match-5+ → a color nova that clears every tile of that colour.
-  function applyPowerups(hits, powerups) {
-    if (!powerups || !powerups.length) return null;
-    let hasNova = false;
-    powerups.forEach((pu) => {
-      if (pu.type === "nova") {
-        hasNova = true;
-        for (let r = 0; r < H; r++)
-          for (let c = 0; c < W; c++) {
-            const t = app.grid[r][c];
-            if (t && t.color === pu.color) hits.add(r + "," + c);
-          }
-      } else {
-        for (let c = 0; c < W; c++) if (app.grid[pu.r] && app.grid[pu.r][c]) hits.add(pu.r + "," + c);
-        for (let r = 0; r < H; r++) if (app.grid[r][pu.c]) hits.add(r + "," + pu.c);
+  // ── POTIONS ──────────────────────────────────────────────────────────────
+  // Match 4 of an ingredient brews a colour-specific potion with its own
+  // bonus effect; match 5+ brews the Grand Elixir. (Tester idea, Kugai117.)
+  const POTIONS = {
+    moonpetal: { name: "Nightbloom Draught", fx: "area3", tip: "clears a 3×3 bloom", color: "#c9a4ff" },
+    vial:      { name: "Verdant Tonic",      fx: "row",   tip: "clears the whole row",    color: "#7be3a8" },
+    runestone: { name: "Tidewater Elixir",   fx: "col",   tip: "clears the whole column", color: "#8fb8ff" },
+    resin:     { name: "Sunmote Philtre",    fx: "cross", tip: "clears a row + column",   color: "#f2b968" },
+    mushroom:  { name: "Ember Vial",         fx: "burst", tip: "bursts every matching gem", color: "#e97e7e" },
+  };
+  const GRAND = { name: "Grand Elixir", fx: "area5", tip: "clears a 5×5 blast", color: "#e6b25a" };
+
+  function applyPotionFx(hits, fx, p) {
+    const addRow = (r) => { for (let c = 0; c < W; c++) if (app.grid[r] && app.grid[r][c]) hits.add(r + "," + c); };
+    const addCol = (c) => { for (let r = 0; r < H; r++) if (app.grid[r][c]) hits.add(r + "," + c); };
+    const addArea = (rad) => {
+      for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
+        const rr = p.r + dr, cc = p.c + dc;
+        if (rr >= 0 && rr < H && cc >= 0 && cc < W && app.grid[rr][cc]) hits.add(rr + "," + cc);
       }
+    };
+    if (fx === "row") addRow(p.r);
+    else if (fx === "col") addCol(p.c);
+    else if (fx === "cross") { addRow(p.r); addCol(p.c); }
+    else if (fx === "area3") addArea(1);
+    else if (fx === "area5") addArea(2);
+    else if (fx === "burst") { for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) { const t = app.grid[r][c]; if (t && t.color === p.color) hits.add(r + "," + c); } }
+  }
+
+  // Brew potions from the matched runs; returns the potion to announce
+  // (the Grand Elixir wins if any was brewed this step).
+  function applyPotions(hits, potions) {
+    if (!potions || !potions.length) return null;
+    let announce = null;
+    potions.forEach((p) => {
+      const def = p.tier === "grand" ? GRAND : POTIONS[p.color];
+      applyPotionFx(hits, def.fx, p);
+      if (!announce || p.tier === "grand") announce = def;
     });
-    return hasNova ? "nova" : "rocket";
+    return announce;
   }
 
   function flashBoard() {
@@ -1139,8 +1160,8 @@
     const scan = findMatches();
     const hits = scan.hits;
     if (hits.size === 0) { endResolve(); return; }
-    // power-ups: matches of 4+ blast extra tiles into `hits` before we clear
-    const puKind = applyPowerups(hits, scan.powerups);
+    // potions: matches of 4+ brew a potion whose effect blasts extra tiles
+    const brewed = applyPotions(hits, scan.potions);
     // count toward objective (includes power-up-cleared target tiles)
     let gained = 0;
     hits.forEach(key => {
@@ -1155,15 +1176,15 @@
     }
     // ── juicy feedback: score + combo banner + shake, all escalating ──
     const mult = cascade + 1; // chain depth = combo multiplier (1, 2, 3, …)
-    const pts = hits.size * 10 * mult + (puKind ? (puKind === "nova" ? 200 : 100) : 0);
+    const bigFx = brewed && (brewed.fx === "area5" || brewed.fx === "burst");
+    const pts = hits.size * 10 * mult + (brewed ? (bigFx ? 200 : 120) : 0);
     app.score += pts;
     updateScore();
     floatScore(pts, mult);
-    if (puKind === "nova") showToast("🌟 COLOR NOVA!");
-    else if (puKind === "rocket") showToast("⚡ POWER-UP!");
+    if (brewed) showToast(`⚗️ ${brewed.name}!`);
     if (cascade >= 1) showCombo(mult);
-    if (puKind) { app.coins += puKind === "nova" ? 40 : 20; syncHud(); flashBoard(); }
-    if (puKind || cascade >= 1) shakeBoard(puKind ? Math.max(3, mult) : mult);
+    if (brewed) { app.coins += bigFx ? 40 : 25; syncHud(); flashBoard(); }
+    if (brewed || cascade >= 1) shakeBoard(brewed ? Math.max(3, mult) : mult);
     // pop matched
     hits.forEach(key => {
       const [r, c] = key.split(",").map(Number);
