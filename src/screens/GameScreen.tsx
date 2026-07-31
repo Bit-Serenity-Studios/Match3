@@ -149,7 +149,13 @@ export function GameScreen() {
   const [castSeed, setCastSeed] = useState(0);
 
   useEffect(() => {
-    const fails = consecutiveFails[tunedLevel.id] ?? 0;
+    // Read the fail count via getState rather than subscribing to it:
+    // registerWin/registerLoss mutate consecutiveFails, and if this effect
+    // depended on it the board would rebuild the instant you win — wiping the
+    // "won" overlay before you can tap Next, trapping you on the level (most
+    // visibly, forever on 001). The board should only re-init when the level
+    // (tunedLevel) or equipped companion changes.
+    const fails = useProfile.getState().consecutiveFails[tunedLevel.id] ?? 0;
     setState(initialState(tunedLevel, fails));
     setEnded(false);
     setCharge(0);
@@ -162,7 +168,8 @@ export function GameScreen() {
       boostersUsed: {},
       companionId: equippedId ?? null,
     });
-  }, [tunedLevel, consecutiveFails, equippedId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tunedLevel, equippedId]);
 
   const boardSize = Math.min(dims.width - spacing.lg * 2, 420);
   const companion = equippedId ? getCompanion(equippedId) : null;
