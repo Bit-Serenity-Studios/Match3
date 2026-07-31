@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { CurrencyAmount, RewardChips } from '../components/Currency';
+import { Icon } from '../components/Icon';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useUI } from '../state/ui';
@@ -83,6 +84,7 @@ export function StoreScreen(): React.ReactElement {
   const crackPiggy = useMonetization((s) => s.crackPiggy);
   const unlockPassPremium = useMonetization((s) => s.unlockPassPremium);
   const goToHome = useUI((s) => s.goToHome);
+  const [thanks, setThanks] = useState<ProductDef | null>(null);
 
   const buyProduct = useCallback(
     async (product: ProductDef) => {
@@ -94,25 +96,17 @@ export function StoreScreen(): React.ReactElement {
       if (!result.success) return;
       if (product.kind === 'piggyUnlock') {
         crackPiggy(Date.now());
-        purchaseProduct(product, Date.now());
-        return;
-      }
-      if (product.kind === 'subscription') {
-        // purchaseProduct -> applyGrants already activates the subscription via
-        // grants.subscriptionDays (30d). Calling activateSubscription here too
-        // stacked a second period — one purchase granted 60 days. Grant once.
-        purchaseProduct(product, Date.now());
-        return;
-      }
-      if (product.kind === 'battlePass') {
+      } else if (product.kind === 'battlePass') {
         unlockPassPremium(Date.now());
-        purchaseProduct(product, Date.now());
-        return;
       }
+      // purchaseProduct records the SKU and applies grants for every kind
+      // (incl. the subscription's 30 days via grants.subscriptionDays — one
+      // activation only, so a purchase grants 30 days, not 60).
       purchaseProduct(product, Date.now());
       if (product.kind === 'segmentedOffer') {
         track('offer_purchased', { sku: product.sku, levelId: 'unknown' });
       }
+      setThanks(product);
     },
     [purchaseProduct, crackPiggy, unlockPassPremium],
   );
@@ -200,6 +194,23 @@ export function StoreScreen(): React.ReactElement {
           <ProductCard product={BATTLE_PASS} onBuy={() => buyProduct(BATTLE_PASS)} />
         </View>
       </ScrollView>
+
+      {thanks && (
+        <View style={styles.thanksOverlay}>
+          <View style={styles.thanksCard}>
+            <Icon name="sparkle" size={40} />
+            <Text style={styles.thanksTitle}>Thank you!</Text>
+            <Text style={styles.thanksBody}>
+              {thanks.title}
+              {thanks.subtitle ? ` — ${thanks.subtitle}` : ''} is yours. Thanks for
+              supporting the apothecary.
+            </Text>
+            <Pressable style={styles.thanksBtn} onPress={click(() => setThanks(null))}>
+              <Text style={styles.thanksBtnLabel}>Continue</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -283,4 +294,42 @@ const styles = StyleSheet.create({
   },
   claimLabel: { color: palette.bgDeep, fontWeight: '700' },
   claimRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  thanksOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: palette.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    zIndex: 300,
+  },
+  thanksCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.candlelight,
+    borderWidth: 2,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  thanksTitle: { ...typography.h1, fontSize: 24, textAlign: 'center' },
+  thanksBody: {
+    ...typography.body,
+    color: palette.parchment,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  thanksBtn: {
+    backgroundColor: palette.candlelight,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xxl,
+    borderRadius: radii.pill,
+  },
+  thanksBtnLabel: { color: palette.bgDeep, fontWeight: '800', fontSize: 16 },
 });

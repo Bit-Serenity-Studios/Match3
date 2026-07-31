@@ -9,6 +9,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { Icon } from '../components/Icon';
+import { APP_VERSION } from '../appMeta';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
 import { track } from '../telemetry/logger';
@@ -46,12 +47,17 @@ export function HubScreen() {
         <View>
           <Text style={typography.h1}>Apothecary</Text>
           <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
-            <Text style={typography.small}>Between the moon and the kettle. · v0.4</Text>
+            <Text style={typography.small}>Between the moon and the kettle. · v{APP_VERSION}</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.playBtn} onPress={goToGame}>
-          <Text style={styles.playLabel}>Play</Text>
-        </Pressable>
+        <View style={styles.headerBtns}>
+          <Pressable style={styles.homeBtn} onPress={() => useUI.getState().goToHome()}>
+            <Text style={styles.homeLabel}>Home</Text>
+          </Pressable>
+          <Pressable style={styles.playBtn} onPress={goToGame}>
+            <Text style={styles.playLabel}>Play</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.currencies}>
@@ -500,6 +506,23 @@ const styles = StyleSheet.create({
   playLabel: {
     color: palette.bgDeep,
     fontWeight: '700',
+  },
+  headerBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  homeBtn: {
+    backgroundColor: palette.bgSurface,
+    borderColor: palette.border,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+  },
+  homeLabel: {
+    color: palette.parchment,
+    fontWeight: '600',
   },
   currencies: {
     flexDirection: 'row',

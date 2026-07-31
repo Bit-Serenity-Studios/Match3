@@ -93,7 +93,7 @@ export const SUBSCRIPTION: ProductDef = {
   priceUsdCents: 499,
   displayPrice: '$4.99/mo',
   title: 'Apprentice’s Oath',
-  subtitle: 'No interstitials · +5 stars / day · Nameplate',
+  subtitle: 'Ad-free play · 5 Stars every day · Exclusive nameplate',
   grants: {
     subscriptionDays: 30,
     gems: 5,

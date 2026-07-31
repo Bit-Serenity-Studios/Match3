@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
 import { Icon, type IconName } from '../../components/Icon';
 import { useUI, type Screen } from '../../state/ui';
@@ -74,7 +74,10 @@ const styles = StyleSheet.create({
     borderTopColor: palette.border,
     borderTopWidth: 1,
     backgroundColor: palette.bgSurface,
-    paddingBottom: spacing.md,
+    // Clear the home indicator / gesture bar (the app draws edge-to-edge on
+    // SDK 54, so a flat 12px left the tabs sitting under the home bar). The bar
+    // background fills to the screen edge; the tab content is padded up.
+    paddingBottom: Platform.OS === 'ios' ? 34 : 30,
     paddingTop: spacing.xs,
   },
   tab: {

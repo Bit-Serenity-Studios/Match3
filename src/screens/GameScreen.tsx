@@ -12,6 +12,7 @@ import { withDifficulty } from '../engine/difficulty';
 import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
+import { APP_VERSION } from '../appMeta';
 import { WoodButton } from '../components/WoodButton';
 import { Icon } from '../components/Icon';
 import { LEVELS, getLevelByIndex, isEndlessIndex } from '../levels/catalog';
@@ -429,7 +430,7 @@ export function GameScreen() {
           <Text style={typography.h1}>Moonpetal Apothecary</Text>
           <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
             <Text style={typography.small}>
-              {level.id} · {level.archetype} · v0.4
+              {level.id} · {level.archetype} · v{APP_VERSION}
             </Text>
           </Pressable>
         </View>
