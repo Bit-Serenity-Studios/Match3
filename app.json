@@ -2,7 +2,7 @@
   "expo": {
     "name": "Moonpetal Apothecary",
     "slug": "moonpetal-apothecary",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "assetBundlePatterns": [
@@ -24,12 +24,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "cf89f08d-d801-4c90-b063-e932747cd592"
+        "projectId": "0d632714-c104-499c-9d41-871e252de6d1"
       }
     },
-    "owner": "firewalk",
+    "owner": "bit-serenity-studios-llc",
     "updates": {
-      "url": "https://u.expo.dev/cf89f08d-d801-4c90-b063-e932747cd592"
+      "url": "https://u.expo.dev/0d632714-c104-499c-9d41-871e252de6d1"
     }
   }
 }

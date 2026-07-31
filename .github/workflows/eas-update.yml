@@ -5,14 +5,12 @@ name: EAS Update (Expo Go)
 # project, configuring it, and publishing all happen here. The only human
 # step is adding EXPO_TOKEN once (from a phone). See EAS_PREVIEW.md.
 
+# Manual-only. The Expo project now lives under the bit-serenity-studios-llc
+# org (projectId 0d632714…), so this workflow needs an EXPO_TOKEN that belongs
+# to — or is a member of — that org. Until such a token is set as a GitHub
+# secret, auto-running on push would only produce failing runs, so we require
+# an explicit button press (Actions → EAS Update → Run workflow).
 on:
-  push:
-    branches:
-      - main
-      - claude/moonpetal-phase-4-economy-ykq7a3
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
 
 permissions:
