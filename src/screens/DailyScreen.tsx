@@ -1,13 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
-import { MenuButton } from '../components/MenuButton';
+import { HomeButton } from '../components/HomeButton';
 import { RewardChips } from '../components/Currency';
 import { useProfile } from '../state/profile';
 import { useRetention } from '../state/retention';
-import { useUI } from '../state/ui';
 import {
   CALENDAR_REWARDS,
   startOfUTCDay,
@@ -21,7 +20,6 @@ import { sfx } from '../audio/soundEffects';
  * escalates the reward; missing 2+ days resets the cycle.
  */
 export function DailyScreen(): React.ReactElement {
-  const goToHome = useUI((s) => s.goToHome);
   const cal = useRetention((s) => s.calendar);
   const idx = useRetention((s) => s.currentCalendarDayIndex(Date.now()));
   const canLogin = useRetention((s) => canClaim(s, Date.now()));
@@ -44,14 +42,11 @@ export function DailyScreen(): React.ReactElement {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <MenuButton />
         <View style={styles.headerTitle}>
           <Text style={typography.h1}>Daily Rewards</Text>
           <Text style={typography.small}>Return every night.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={click(() => goToHome())}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Switch } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { HomeButton } from '../components/HomeButton';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { click } from '../audio/click';
@@ -54,9 +55,7 @@ export function SettingsScreen(): React.ReactElement {
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>Settings</Text>
-        <Pressable style={styles.backBtn} onPress={click(goToHome)}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>

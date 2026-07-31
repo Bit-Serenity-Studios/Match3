@@ -4,10 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { CurrencyAmount, RewardChips } from '../components/Currency';
 import { Icon } from '../components/Icon';
-import { MenuButton } from '../components/MenuButton';
+import { HomeButton } from '../components/HomeButton';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
-import { useUI } from '../state/ui';
 import { getMonetization } from '../monetization/singleton';
 import { track } from '../telemetry/logger';
 import {
@@ -107,7 +106,6 @@ export function StoreScreen(): React.ReactElement {
   const recordRestoredPurchase = useMonetization((s) => s.recordRestoredPurchase);
   const crackPiggy = useMonetization((s) => s.crackPiggy);
   const unlockPassPremium = useMonetization((s) => s.unlockPassPremium);
-  const goToHome = useUI((s) => s.goToHome);
   const [thanks, setThanks] = useState<ProductDef | null>(null);
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
@@ -166,14 +164,11 @@ export function StoreScreen(): React.ReactElement {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <MenuButton />
         <View style={styles.headerTitle}>
           <Text style={typography.h1}>Store</Text>
           <Text style={typography.small}>Support the apothecary.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={click(() => goToHome())}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <View style={styles.wallet}>

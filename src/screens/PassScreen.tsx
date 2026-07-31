@@ -4,10 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
 import { Icon } from '../components/Icon';
-import { MenuButton } from '../components/MenuButton';
+import { HomeButton } from '../components/HomeButton';
 import { RewardChips } from '../components/Currency';
 import { useMonetization, currentPassLevel } from '../state/monetization';
-import { useUI } from '../state/ui';
 import { CHALLENGES, PASS_REWARDS, XP_PER_LEVEL, PASS_LEVELS } from '../monetization/battlePass';
 import { BATTLE_PASS } from '../monetization/catalog';
 import { getMonetization } from '../monetization/singleton';
@@ -19,7 +18,6 @@ export function PassScreen(): React.ReactElement {
   const purchaseProduct = useMonetization((s) => s.purchaseProduct);
   const unlockPremium = useMonetization((s) => s.unlockPassPremium);
   const refreshPass = useMonetization((s) => s.refreshPass);
-  const goToHub = useUI((s) => s.goToHub);
 
   // Roll the season over on open so the displayed pass state and the claim
   // logic agree — otherwise a claim at a season boundary silently resets it.
@@ -38,16 +36,13 @@ export function PassScreen(): React.ReactElement {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <MenuButton />
         <View style={styles.headerTitle}>
           <Text style={typography.h1}>Mini-Pass</Text>
           <Text style={typography.small}>
             Season {pass.seasonId} · Level {level} / {PASS_LEVELS}
           </Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={() => goToHub()}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <View style={styles.xpBar}>

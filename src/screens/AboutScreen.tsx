@@ -1,21 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
-import { useUI } from '../state/ui';
+import { HomeButton } from '../components/HomeButton';
 import { LEVELS } from '../levels/catalog';
 import { APP_VERSION, EXPO_SDK } from '../appMeta';
 
 export function AboutScreen(): React.ReactElement {
-  const goToHome = useUI((s) => s.goToHome);
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>About</Text>
-        <Pressable style={styles.backBtn} onPress={goToHome}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Moonpetal Apothecary</Text>

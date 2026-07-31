@@ -8,7 +8,7 @@ import {
   computeFailMargins,
   funnelCounts,
 } from '../telemetry/queue';
-import { useUI } from '../state/ui';
+import { HomeButton } from '../components/HomeButton';
 import { LEVELS } from '../levels/catalog';
 
 type Tab = 'aps' | 'fails' | 'funnel' | 'events';
@@ -17,7 +17,6 @@ export function DevDashboardScreen(): React.ReactElement {
   const [tab, setTab] = useState<Tab>('aps');
   const queue = useTelemetry((s) => s.queue);
   const sessionId = useTelemetry((s) => s.sessionId);
-  const goToGame = useUI((s) => s.goToGame);
   const clear = useTelemetry((s) => s.clear);
   const exportJson = useTelemetry((s) => s.exportJson);
   const [copied, setCopied] = useState<string | null>(null);
@@ -36,9 +35,7 @@ export function DevDashboardScreen(): React.ReactElement {
             {queue.length} events · session {sessionId.slice(0, 12) || '—'}
           </Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={goToGame}>
-          <Text style={styles.backLabel}>Close</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <View style={styles.tabs}>

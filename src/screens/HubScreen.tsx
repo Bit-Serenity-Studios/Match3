@@ -9,7 +9,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { Icon } from '../components/Icon';
-import { MenuButton } from '../components/MenuButton';
+import { HomeButton } from '../components/HomeButton';
 import { APP_VERSION } from '../appMeta';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
@@ -45,7 +45,6 @@ export function HubScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <MenuButton />
         <View style={styles.headerTitle}>
           <Text style={typography.h1}>Apothecary</Text>
           <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
@@ -53,9 +52,7 @@ export function HubScreen() {
           </Pressable>
         </View>
         <View style={styles.headerBtns}>
-          <Pressable style={styles.homeBtn} onPress={() => useUI.getState().goToHome()}>
-            <Text style={styles.homeLabel}>Home</Text>
-          </Pressable>
+          <HomeButton />
           <Pressable style={styles.playBtn} onPress={goToGame}>
             <Text style={styles.playLabel}>Play</Text>
           </Pressable>
@@ -516,18 +513,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  homeBtn: {
-    backgroundColor: palette.bgSurface,
-    borderColor: palette.border,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-  },
-  homeLabel: {
-    color: palette.parchment,
-    fontWeight: '600',
   },
   currencies: {
     flexDirection: 'row',

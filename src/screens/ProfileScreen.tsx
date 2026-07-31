@@ -1,14 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii, typography } from '../theme';
 import { Icon, type IconName } from '../components/Icon';
+import { HomeButton } from '../components/HomeButton';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useRetention } from '../state/retention';
-import { useUI } from '../state/ui';
 import { LEVELS } from '../levels/catalog';
-import { click } from '../audio/click';
 
 /**
  * Player profile — the "who am I" page. Shows avatar (moon crest with
@@ -20,7 +19,6 @@ import { click } from '../audio/click';
  * on-ramp.
  */
 export function ProfileScreen(): React.ReactElement {
-  const goToHome = useUI((s) => s.goToHome);
   const highest = useProfile((s) => s.highestUnlocked);
   const moonstones = useProfile((s) => s.moonstones);
   const coins = useProfile((s) => s.coins);
@@ -45,9 +43,7 @@ export function ProfileScreen(): React.ReactElement {
           <Text style={typography.h1}>Profile</Text>
           <Text style={typography.small}>Your apothecary at a glance.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={click(goToHome)}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>

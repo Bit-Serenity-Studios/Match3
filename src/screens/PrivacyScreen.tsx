@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
-import { useUI } from '../state/ui';
+import { HomeButton } from '../components/HomeButton';
 
 /**
  * Privacy policy — required for App Store / Google Play submission when
@@ -13,15 +13,12 @@ import { useUI } from '../state/ui';
  * standard app-store privacy nutrition labels.
  */
 export function PrivacyScreen(): React.ReactElement {
-  const goToHome = useUI((s) => s.goToHome);
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <Text style={typography.h1}>Privacy Policy</Text>
-        <Pressable style={styles.backBtn} onPress={goToHome}>
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+        <HomeButton />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
