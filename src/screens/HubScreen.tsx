@@ -9,6 +9,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { Icon } from '../components/Icon';
+import { MenuButton } from '../components/MenuButton';
 import { APP_VERSION } from '../appMeta';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
@@ -44,7 +45,8 @@ export function HubScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <View>
+        <MenuButton />
+        <View style={styles.headerTitle}>
           <Text style={typography.h1}>Apothecary</Text>
           <Pressable onLongPress={() => useUI.getState().goToDevDashboard()} delayLongPress={800}>
             <Text style={typography.small}>Between the moon and the kettle. · v{APP_VERSION}</Text>
@@ -493,9 +495,12 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  headerTitle: {
+    flex: 1,
   },
   playBtn: {
     backgroundColor: palette.candlelight,

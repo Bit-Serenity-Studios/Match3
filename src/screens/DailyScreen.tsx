@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { MenuButton } from '../components/MenuButton';
 import { RewardChips } from '../components/Currency';
 import { useProfile } from '../state/profile';
 import { useRetention } from '../state/retention';
@@ -43,7 +44,8 @@ export function DailyScreen(): React.ReactElement {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <View>
+        <MenuButton />
+        <View style={styles.headerTitle}>
           <Text style={typography.h1}>Daily Rewards</Text>
           <Text style={typography.small}>Return every night.</Text>
         </View>
@@ -108,10 +110,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  headerTitle: { flex: 1 },
   backBtn: {
     backgroundColor: palette.bgSurface,
     borderColor: palette.border,

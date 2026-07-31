@@ -18,6 +18,7 @@ import { GrimoireScreen } from './src/screens/GrimoireScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { PlaceholderScreen } from './src/screens/PlaceholderScreen';
 import { TosModal } from './src/screens/TosModal';
+import { HeaderMenu } from './src/screens/shell/HeaderMenu';
 import { useUI } from './src/state/ui';
 import { useTelemetry } from './src/telemetry/logger';
 import { useRetention } from './src/state/retention';
@@ -174,6 +175,9 @@ export default function App(): React.ReactElement {
       ) : (
         <GameScreen />
       )}
+      {/* App-wide menu overlay — reachable from shell screens (TopHud) AND
+          standalone screens (their MenuButton). Null unless opened. */}
+      {splashDone && !needsTos && <HeaderMenu />}
     </GestureHandlerRootView>
   );
 }

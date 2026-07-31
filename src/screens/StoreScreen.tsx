@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { CurrencyAmount, RewardChips } from '../components/Currency';
 import { Icon } from '../components/Icon';
+import { MenuButton } from '../components/MenuButton';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useUI } from '../state/ui';
@@ -15,7 +16,9 @@ import {
   PIGGY_UNLOCK,
   SUBSCRIPTION,
   BATTLE_PASS,
+  getProduct,
 } from '../monetization/catalog';
+import { isActive as subscriptionActive } from '../monetization/subscription';
 import type { ProductDef } from '../monetization/types';
 import { PIGGY_MAX_GEMS } from '../monetization/piggyBank';
 import { click } from '../audio/click';
@@ -24,21 +27,32 @@ interface CardProps {
   product: ProductDef;
   onBuy(): void;
   disabled?: boolean;
+  /** Already owned — locks the card and shows an entitlement pill instead of
+   *  the price. Used for one-time buys (Battle Pass, subscription). */
+  owned?: boolean;
+  ownedLabel?: string;
 }
 
-function ProductCard({ product, onBuy, disabled }: CardProps): React.ReactElement {
+function ProductCard({
+  product,
+  onBuy,
+  disabled,
+  owned,
+  ownedLabel,
+}: CardProps): React.ReactElement {
+  const locked = disabled || owned;
   return (
     <Pressable
       style={[
         styles.card,
         product.badge === 'best_value' && styles.cardBest,
         product.badge === 'anchor' && styles.cardAnchor,
-        disabled && styles.cardDisabled,
+        locked && styles.cardDisabled,
       ]}
-      onPress={click(onBuy)}
-      disabled={disabled}
+      onPress={owned ? undefined : click(onBuy)}
+      disabled={locked}
     >
-      {product.badge && (
+      {product.badge && !owned && (
         <View style={[styles.badge, badgeStyleFor(product.badge)]}>
           <Text style={styles.badgeLabel}>
             {product.badge === 'best_value'
@@ -54,7 +68,14 @@ function ProductCard({ product, onBuy, disabled }: CardProps): React.ReactElemen
         <Text style={typography.small}>{product.subtitle}</Text>
       )}
       <View style={styles.priceRow}>
-        <Text style={styles.priceLabel}>{product.displayPrice}</Text>
+        {owned ? (
+          <View style={styles.ownedPill}>
+            <Icon name="check" size={14} tint={palette.bgDeep} />
+            <Text style={styles.ownedLabel}>{ownedLabel ?? 'Owned'}</Text>
+          </View>
+        ) : (
+          <Text style={styles.priceLabel}>{product.displayPrice}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -80,11 +101,16 @@ export function StoreScreen(): React.ReactElement {
   const embers = useProfile((s) => s.embers);
   const piggy = useMonetization((s) => s.piggy);
   const purchasedSkus = useMonetization((s) => s.purchasedSkus);
+  const subscription = useMonetization((s) => s.subscription);
+  const passPremium = useMonetization((s) => s.pass.premiumUnlocked);
   const purchaseProduct = useMonetization((s) => s.purchaseProduct);
+  const recordRestoredPurchase = useMonetization((s) => s.recordRestoredPurchase);
   const crackPiggy = useMonetization((s) => s.crackPiggy);
   const unlockPassPremium = useMonetization((s) => s.unlockPassPremium);
   const goToHome = useUI((s) => s.goToHome);
   const [thanks, setThanks] = useState<ProductDef | null>(null);
+  const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const buyProduct = useCallback(
     async (product: ProductDef) => {
@@ -111,13 +137,37 @@ export function StoreScreen(): React.ReactElement {
     [purchaseProduct, crackPiggy, unlockPassPremium],
   );
 
+  const restorePurchases = useCallback(async () => {
+    setRestoring(true);
+    try {
+      const results = await getMonetization().restore();
+      const ok = results.filter((r) => r.success);
+      for (const r of ok) {
+        const product = getProduct(r.sku);
+        if (product) recordRestoredPurchase(product, Date.now());
+      }
+      setRestoreMsg(
+        ok.length > 0
+          ? `Restored ${ok.length} purchase${ok.length === 1 ? '' : 's'}.`
+          : 'No previous purchases found for this account.',
+      );
+    } catch {
+      setRestoreMsg('Restore failed. Check your connection and try again.');
+    } finally {
+      setRestoring(false);
+    }
+  }, [recordRestoredPurchase]);
+
   const starterBought = purchasedSkus.includes(STARTER_BUNDLE.sku);
+  const subscribed = subscriptionActive(subscription, Date.now());
+  const battlePassOwned = passPremium || purchasedSkus.includes(BATTLE_PASS.sku);
 
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <View>
+        <MenuButton />
+        <View style={styles.headerTitle}>
           <Text style={typography.h1}>Store</Text>
           <Text style={typography.small}>Support the apothecary.</Text>
         </View>
@@ -186,12 +236,39 @@ export function StoreScreen(): React.ReactElement {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Apprentice's Oath</Text>
-          <ProductCard product={SUBSCRIPTION} onBuy={() => buyProduct(SUBSCRIPTION)} />
+          <ProductCard
+            product={SUBSCRIPTION}
+            onBuy={() => buyProduct(SUBSCRIPTION)}
+            owned={subscribed}
+            ownedLabel="Active"
+          />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Battle Pass</Text>
-          <ProductCard product={BATTLE_PASS} onBuy={() => buyProduct(BATTLE_PASS)} />
+          <ProductCard
+            product={BATTLE_PASS}
+            onBuy={() => buyProduct(BATTLE_PASS)}
+            owned={battlePassOwned}
+            ownedLabel="Owned"
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Pressable
+            style={[styles.restoreBtn, restoring && styles.cardDisabled]}
+            onPress={click(restorePurchases)}
+            disabled={restoring}
+          >
+            <Text style={styles.restoreLabel}>
+              {restoring ? 'Restoring…' : 'Restore Purchases'}
+            </Text>
+          </Pressable>
+          {restoreMsg && <Text style={styles.restoreMsg}>{restoreMsg}</Text>}
+          <Text style={styles.restoreHint}>
+            Reinstates ad-free play, the Battle Pass, and other one-time
+            unlocks on a new device or after reinstalling.
+          </Text>
         </View>
       </ScrollView>
 
@@ -224,10 +301,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  headerTitle: { flex: 1 },
   backBtn: {
     backgroundColor: palette.bgSurface,
     borderColor: palette.border,
@@ -276,6 +354,37 @@ const styles = StyleSheet.create({
     color: palette.candlelight,
     fontSize: 18,
     fontWeight: '700',
+  },
+  ownedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    backgroundColor: palette.emerald,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+  },
+  ownedLabel: { color: palette.bgDeep, fontWeight: '800', fontSize: 13 },
+  restoreBtn: {
+    borderColor: palette.border,
+    borderWidth: 1,
+    backgroundColor: palette.bgSurface,
+    paddingVertical: spacing.md,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+  },
+  restoreLabel: { color: palette.parchment, fontWeight: '700' },
+  restoreMsg: {
+    ...typography.small,
+    color: palette.candlelight,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  restoreHint: {
+    ...typography.small,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   progressBar: {
     height: 6,

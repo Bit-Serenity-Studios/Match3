@@ -4,10 +4,10 @@ import { StatusBar } from 'expo-status-bar';
 import { palette } from '../../theme';
 import { TopHud } from './TopHud';
 import { BottomNav } from './BottomNav';
-import { HeaderMenu } from './HeaderMenu';
 
-/** Shell that composes TopHud + content + BottomNav, plus a floating
- *  HeaderMenu overlay when the hamburger is open. */
+/** Shell that composes TopHud + content + BottomNav. The floating HeaderMenu
+ *  overlay is mounted once at the App root (so it's reachable from standalone
+ *  screens too), not here. */
 export function ShellFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
     <View style={styles.root}>
@@ -15,7 +15,6 @@ export function ShellFrame({ children }: { children: React.ReactNode }): React.R
       <TopHud />
       <View style={styles.body}>{children}</View>
       <BottomNav />
-      <HeaderMenu />
     </View>
   );
 }

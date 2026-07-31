@@ -93,6 +93,7 @@ export interface MonetizationSlice {
   applyGrants(grants: Grants, now: number): void;
 
   purchaseProduct(product: ProductDef, now: number): void;
+  recordRestoredPurchase(product: ProductDef, now: number): void;
   activateSubscription(now: number): void;
   claimSubscriptionDrip(now: number): number;
 
@@ -209,6 +210,28 @@ export const useMonetization = create<MonetizationSlice>()(
           everPurchased: true,
         });
         get().applyGrants(product.grants, now);
+      },
+      recordRestoredPurchase(product, now) {
+        // Re-establish ownership + entitlements from a store restore WITHOUT
+        // re-granting consumables (gems/coins/boosters). Store restore only
+        // returns non-consumables + subscriptions; re-running applyGrants
+        // would double-dip a consumable bundle. So we mark the SKU owned and
+        // reinstate only the durable entitlements (ad-free sub, pass premium).
+        const s = get();
+        const nextSkus = s.purchasedSkus.includes(product.sku)
+          ? s.purchasedSkus
+          : [...s.purchasedSkus, product.sku];
+        const patch: Partial<MonetizationSlice> = {
+          purchasedSkus: nextSkus,
+          everPurchased: true,
+        };
+        if (product.kind === 'subscription') {
+          patch.subscription = subActivate(s.subscription, now);
+        }
+        if (product.kind === 'battlePass') {
+          patch.pass = unlockPremium(rolloverIfNeeded(s.pass, now));
+        }
+        set(patch);
       },
       activateSubscription(now) {
         set({ subscription: subActivate(get().subscription, now) });

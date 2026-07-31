@@ -23,6 +23,7 @@ export function HeaderMenu(): React.ReactElement | null {
   const open = useUI((s) => s.headerMenuOpen);
   const close = useUI((s) => s.closeHeaderMenu);
   const {
+    goToHome,
     goToProfile,
     goToFriends,
     goToLeaderboards,
@@ -36,6 +37,7 @@ export function HeaderMenu(): React.ReactElement | null {
   if (!open) return null;
 
   const items: Item[] = [
+    { icon: 'home', label: 'Home', onPress: goToHome },
     { icon: 'moon', label: 'Your Profile', onPress: goToProfile },
     { icon: 'friends', label: 'Friends', onPress: goToFriends },
     { icon: 'trophy', label: 'Leaderboards', onPress: goToLeaderboards },

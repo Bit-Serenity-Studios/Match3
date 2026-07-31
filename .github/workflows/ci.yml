@@ -1,7 +1,7 @@
 name: CI
 
 # Quality gate: typecheck + the full jest suite on every push and PR.
-# Keeps the 202-test suite honest before anything ships or builds.
+# Keeps the full test suite honest before anything ships or builds.
 
 on:
   push:

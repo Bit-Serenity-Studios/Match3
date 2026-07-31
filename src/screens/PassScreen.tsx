@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
 import { Icon } from '../components/Icon';
+import { MenuButton } from '../components/MenuButton';
 import { RewardChips } from '../components/Currency';
 import { useMonetization, currentPassLevel } from '../state/monetization';
 import { useUI } from '../state/ui';
@@ -37,7 +38,8 @@ export function PassScreen(): React.ReactElement {
     <View style={styles.root}>
       <StatusBar style="light" />
       <View style={styles.header}>
-        <View>
+        <MenuButton />
+        <View style={styles.headerTitle}>
           <Text style={typography.h1}>Mini-Pass</Text>
           <Text style={typography.small}>
             Season {pass.seasonId} · Level {level} / {PASS_LEVELS}
@@ -161,7 +163,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxl + spacing.lg,
   },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  headerTitle: { flex: 1 },
   backBtn: {
     backgroundColor: palette.bgSurface,
     borderColor: palette.border,
