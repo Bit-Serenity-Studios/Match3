@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { ShellFrame } from './shell/ShellFrame';
@@ -80,7 +81,7 @@ export function HomeHubScreen(): React.ReactElement {
         {/* Next unlock progress bar */}
         <View style={styles.unlockBar}>
           <View style={styles.unlockTop}>
-            <Text style={styles.trophy}>🏆</Text>
+            <Icon name="trophy" size={22} />
             <View style={styles.unlockBarTrack}>
               <View
                 style={[
@@ -93,7 +94,7 @@ export function HomeHubScreen(): React.ReactElement {
               </Text>
             </View>
             <View style={styles.unlockReward}>
-              <Text style={styles.unlockRewardGlyph}>{nextUnlock.rewardGlyph}</Text>
+              <Icon name={nextUnlock.rewardIcon} size={24} />
             </View>
           </View>
           <Text style={styles.unlockLabel}>
@@ -107,7 +108,7 @@ export function HomeHubScreen(): React.ReactElement {
           {/* Left card — Learn the Basics (tutorial trigger) */}
           <View style={styles.leftCol}>
             <Pressable style={styles.miniCard} onPress={click(startBasics)}>
-              <Text style={styles.miniCardGlyph}>📜</Text>
+              <Icon name="scroll" size={28} style={styles.miniCardGlyph} />
               <Text style={styles.miniCardTitle}>
                 Learn the{'\n'}Basics
               </Text>
@@ -116,7 +117,7 @@ export function HomeHubScreen(): React.ReactElement {
               style={[styles.miniCard, { marginTop: spacing.sm }]}
               onPress={click(goToDaily)}
             >
-              <Text style={styles.miniCardGlyph}>🎁</Text>
+              <Icon name="gift" size={28} style={styles.miniCardGlyph} />
               <Text style={styles.miniCardTitle}>Daily{'\n'}Rewards</Text>
             </Pressable>
           </View>
@@ -124,7 +125,7 @@ export function HomeHubScreen(): React.ReactElement {
           {/* Center hero + Play button */}
           <View style={styles.centerCol}>
             <View style={styles.heroCrest}>
-              <Text style={styles.heroGlyph}>🌙</Text>
+              <Icon name="moon" size={72} />
             </View>
             <Text style={styles.heroTitle}>
               {highest === 0 ? 'Ready to begin?' : `Level ${currentLevelIndex + 1}`}
@@ -140,7 +141,7 @@ export function HomeHubScreen(): React.ReactElement {
         {/* Secondary — online mode */}
         <Pressable style={styles.onlineCard} onPress={click(goToMoonrise)}>
           <View style={styles.onlineIcon}>
-            <Text style={styles.onlineGlyph}>⚔️</Text>
+            <Icon name="swords" size={24} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.onlineTitle}>Moonrise Duel</Text>
@@ -165,21 +166,21 @@ interface NextUnlock {
   pct: number;
   remaining: number;
   rewardName: string;
-  rewardGlyph: string;
+  rewardIcon: IconName;
 }
 
 /** What does the player unlock next? Uses the 60-level campaign as the
  *  ladder — every 5 levels is a milestone. */
 function computeNextUnlock(highest: number): NextUnlock {
-  const MILESTONES: Array<{ at: number; name: string; glyph: string }> = [
-    { at: 3, name: 'Apothecary Hub', glyph: '🏛️' },
-    { at: 6, name: 'Companions', glyph: '🐾' },
-    { at: 9, name: 'Expeditions', glyph: '🗺️' },
-    { at: 15, name: 'Battle Pass', glyph: '⭐' },
-    { at: 20, name: 'Advanced Recipes', glyph: '🧪' },
-    { at: 30, name: 'Legendary Companions', glyph: '👑' },
-    { at: 45, name: 'Master Apothecary', glyph: '🏆' },
-    { at: 60, name: 'Grand Cauldron', glyph: '🎃' },
+  const MILESTONES: Array<{ at: number; name: string; icon: IconName }> = [
+    { at: 3, name: 'Apothecary Hub', icon: 'temple' },
+    { at: 6, name: 'Companions', icon: 'covens' },
+    { at: 9, name: 'Expeditions', icon: 'compass' },
+    { at: 15, name: 'Battle Pass', icon: 'star' },
+    { at: 20, name: 'Advanced Recipes', icon: 'flask' },
+    { at: 30, name: 'Legendary Companions', icon: 'crown' },
+    { at: 45, name: 'Master Apothecary', icon: 'trophy' },
+    { at: 60, name: 'Grand Cauldron', icon: 'pumpkin' },
   ];
   const next = MILESTONES.find((m) => highest < m.at) ?? MILESTONES[MILESTONES.length - 1]!;
   const prev = [...MILESTONES].reverse().find((m) => m.at <= highest);
@@ -193,7 +194,7 @@ function computeNextUnlock(highest: number): NextUnlock {
     pct: Math.max(0, Math.min(1, pct)),
     remaining: Math.max(0, target - current),
     rewardName: next.name,
-    rewardGlyph: next.glyph,
+    rewardIcon: next.icon,
   };
 }
 

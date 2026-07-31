@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii, typography } from '../theme';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useRetention } from '../state/retention';
@@ -53,7 +54,7 @@ export function ProfileScreen(): React.ReactElement {
         {/* Hero card */}
         <View style={styles.hero}>
           <View style={styles.avatarLarge}>
-            <Text style={styles.avatarGlyph}>🌙</Text>
+            <Icon name="moon" size={64} />
             <View style={styles.avatarBadge}>
               <Text style={styles.avatarBadgeText}>{level}</Text>
             </View>
@@ -73,10 +74,10 @@ export function ProfileScreen(): React.ReactElement {
         {/* Currency row */}
         <Text style={styles.section}>Wallet</Text>
         <View style={styles.currencyRow}>
-          <CurrencyTile glyph="🏵️" label="Moonstones" value={moonstones} tint={palette.candlelight} />
-          <CurrencyTile glyph="⭐" label="Stars" value={gems} tint={palette.candlelight} />
-          <CurrencyTile glyph="🪙" label="Coins" value={coins} tint={palette.candlelight} />
-          <CurrencyTile glyph="🔥" label="Embers" value={embers} tint="#e97e7e" />
+          <CurrencyTile icon="moonstone" label="Moonstones" value={moonstones} />
+          <CurrencyTile icon="star" label="Stars" value={gems} />
+          <CurrencyTile icon="coin" label="Coins" value={coins} />
+          <CurrencyTile icon="ember" label="Embers" value={embers} />
         </View>
 
         {/* Records */}
@@ -93,19 +94,19 @@ export function ProfileScreen(): React.ReactElement {
         <View style={styles.perkList}>
           <PerkRow
             active={hasSub}
-            glyph="🌟"
+            icon="star"
             title="Apprentice's Oath"
             sub={hasSub ? 'Active subscription' : 'Not active'}
           />
           <PerkRow
             active={purchasedSkus.includes('bundle.starter')}
-            glyph="🎒"
+            icon="pouch"
             title="Starter Kit"
             sub={purchasedSkus.includes('bundle.starter') ? 'Claimed' : 'Not claimed'}
           />
           <PerkRow
             active={purchasedSkus.length > 0}
-            glyph="🚫"
+            icon="adFree"
             title="Ad-free interstitials"
             sub={purchasedSkus.length > 0 ? 'Enabled by prior purchase' : 'Available with any purchase'}
           />
@@ -116,19 +117,17 @@ export function ProfileScreen(): React.ReactElement {
 }
 
 function CurrencyTile({
-  glyph,
+  icon,
   label,
   value,
-  tint,
 }: {
-  glyph: string;
+  icon: IconName;
   label: string;
   value: number;
-  tint: string;
 }) {
   return (
     <View style={styles.currencyTile}>
-      <Text style={[styles.currencyGlyph, { color: tint }]}>{glyph}</Text>
+      <Icon name={icon} size={22} />
       <Text style={styles.currencyValue}>{value}</Text>
       <Text style={styles.currencyLabel}>{label}</Text>
     </View>
@@ -147,18 +146,18 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
 
 function PerkRow({
   active,
-  glyph,
+  icon,
   title,
   sub,
 }: {
   active: boolean;
-  glyph: string;
+  icon: IconName;
   title: string;
   sub: string;
 }) {
   return (
     <View style={[styles.perkRow, active && styles.perkRowActive]}>
-      <Text style={styles.perkGlyph}>{glyph}</Text>
+      <Icon name={icon} size={22} />
       <View style={{ flex: 1 }}>
         <Text style={styles.perkTitle}>{title}</Text>
         <Text style={styles.perkSub}>{sub}</Text>

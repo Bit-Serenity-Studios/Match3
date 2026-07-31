@@ -5,101 +5,82 @@ that license requires of us as a **commercial, for-profit** distributor.
 Keep this file current: when an asset is added, its provenance and license
 go here in the same commit.
 
+> **Status: 100% CC0.** Every bundled art, icon, and audio asset is CC0 1.0
+> (public domain) or original work owned by Bit Serenity Studios. Nothing in
+> the shipped app requires attribution, a license-notice screen, or carries
+> copyleft. The previously-used Microsoft Fluent Emoji (MIT) and Google Noto
+> Emoji (Apache 2.0) artwork has been **removed** and replaced with CC0
+> equivalents so the app ships clean for sale.
+
 ## Summary table
 
 | Asset group | Source | License | Commercial use | Attribution required | Copyleft |
 |---|---|---|---|---|---|
-| `assets/art/fluent-emoji-flat/` (59 SVGs) | Microsoft Fluent Emoji, via `@iconify-json/fluent-emoji-flat@1.2.5` (npm) | MIT | ✅ Yes, incl. selling | ❌ No user-facing credit needed. License text must ship with the app. | ❌ None |
-| `assets/art/noto-emoji/` (12 SVGs) | Google Noto Emoji (SVG artwork), via `@iconify-json/noto@1.2.7` (npm) | Apache 2.0 | ✅ Yes, incl. selling | ❌ No user-facing credit needed. License text must ship with the app. | ❌ None |
+| UI/icon set — `assets/icons/` (47 PNGs, native) + embedded base64 in `docs/index.html` (preview) | Kenney (Board Game Icons, Game Icons, Puzzle Pack 2, Particle Pack, Medals, Foliage/Background/Cartography/Emote/Tappy Plane packs, Platformer/Graveyard/Cube-Pets/Food/Platformer-Kit) & Quaternius (Ultimate RPG icons), all via `Bit-Serenity-Studios/CC0-Assets` (mirror of first-party CC0 sources) | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
+| Board tile gems — `assets/art/kenney-gems/` (native, 5 PNGs) + embedded base64 in `docs/index.html` (preview) | Kenney "Puzzle Pack" via `Bit-Serenity-Studios/KennyNLAssets`. Licence text: `assets/art/kenney-gems/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
+| Kenney UI — `assets/art/kenney-ui/` (native: wooden round frame + button/panel) + embedded base64 in `docs/index.html` (preview) | Kenney "UI Pack - Adventure" via `Bit-Serenity-Studios/KennyNLAssets`. Licence text: `assets/art/kenney-ui/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 | `assets/sounds/` (9 SFX, `.mp3`) | Kenney "Interface Sounds / UI Audio / Impact Sounds / Music Jingles" via `Bit-Serenity-Studios/KennyNLAssets`, transcoded OGG→mp3 | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 | `assets/music/*.wav` (10 ambient loops) | Generated in-repo by `scripts/gen-sounds.mjs` | Original work — owned by Bit Serenity Studios | ✅ | — | — |
 | `assets/music/kenney_*.mp3` (3 ambient loops) | Kenney "Music Loops" via `Bit-Serenity-Studios/KennyNLAssets`, transcoded OGG→mp3 | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
-| Kenney UI — `assets/art/kenney-ui/` (native: wooden round frame + button/panel) + embedded base64 in `docs/index.html` (preview) | Kenney "UI Pack - Adventure" via `Bit-Serenity-Studios/KennyNLAssets`. Licence text: `assets/art/kenney-ui/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
-| Board tile gems — `assets/art/kenney-gems/` (native app, 5 PNGs) + embedded base64 in `docs/index.html` (preview) | Kenney "Puzzle Pack" via `Bit-Serenity-Studios/KennyNLAssets` (mirror of kenney.nl). Licence text: `assets/art/kenney-gems/LICENSE.txt` | CC0 1.0 (public domain) | ✅ Yes, incl. selling | ❌ None required | ❌ None |
 
-## What we must do to stay compliant when selling the app
+## What CC0 means for us
 
-1. **Ship the license texts.** The MIT text (`assets/art/fluent-emoji-flat/LICENSE`)
-   and the Apache 2.0 notice + full text (`assets/art/noto-emoji/LICENSE`,
-   `assets/art/noto-emoji/LICENSE-APACHE-2.0.txt`) must be included in the
-   distributed app. In practice: add an in-app "Open Source Licenses"
-   screen (standard for every React Native app — the JS dependencies are
-   already MIT and carry the same requirement), or bundle the files in the
-   app package. The files in `assets/` are bundled automatically by
-   Expo's `assetBundlePatterns: ["**/*"]`.
-2. **Do not imply endorsement.** Don't use "Microsoft", "Google",
-   "Fluent", or "Noto" in the app name, store listing, or marketing in a
-   way that suggests they endorse the game. Naming them inside the
-   licenses screen is expected and fine.
-3. **No trademark grant.** MIT and Apache 2.0 license the *artwork
-   copyright*, not any trademarks. The emoji glyphs themselves are
-   generic (flowers, moons, potions) and carry no logos, so this is a
-   non-issue in practice — just never bundle a company logo.
-4. **Apache NOTICE handling.** The noto-emoji repository has no NOTICE
-   file beyond the license header we ship; nothing further required.
+CC0 1.0 is a public-domain dedication: the creator has waived all copyright.
+For a paid app that means:
+
+1. **No attribution required.** No "Open Source Licenses" screen is needed for
+   these assets (we may still ship one for MIT JS dependencies — that's a
+   separate concern from art). No credit line, no notice file must travel with
+   the build.
+2. **No copyleft.** We can modify, recolor, crop, or re-encode freely; our
+   copies and derivatives carry no license obligations back.
+3. **Selling is fine.** CC0 explicitly permits commercial use and sale.
+4. **No trademark grant** (as with any license). The glyphs we use are generic
+   (moons, coins, flasks, scrolls) and carry no logos — never bundle a company
+   logo or brand mark.
+
+Per-pack `LICENSE.txt` files are kept next to the assets (`assets/art/*/`) as a
+provenance record, not because distribution requires them.
 
 ## Details
 
-### Microsoft Fluent Emoji (flat style)
+### CC0 icon set (`assets/icons/`)
 
-- Upstream: https://github.com/microsoft/fluentui-emoji
-- Fetched from: `registry.npmjs.org` package `@iconify-json/fluent-emoji-flat` version 1.2.5
-- License: MIT — full text at `assets/art/fluent-emoji-flat/LICENSE`
-  (fetched verbatim from the upstream repository)
-- MIT terms: free to "use, copy, modify, merge, publish, distribute,
-  sublicense, and/or **sell**", condition being the copyright + permission
-  notice appears "in all copies or substantial portions".
-- Files: 59 curated SVGs — board tiles (cherry-blossom, test-tube, rock,
-  honey-pot, mushroom), specials (bomb, high-voltage, rainbow, collision),
-  currencies (coin, gem-stone, star, fire, rosette), companions
-  (butterfly, owl, fox, frog, bird, paw-prints), ambience (moons,
-  sparkles, candle, teapot, alembic, magic-wand, crystal-ball, herbs,
-  flowers, leaves), and UI glyphs (locked, gear, bell, trophy, house,
-  shopping-bags, shield, scroll, books, world-map, …).
-
-### Google Noto Emoji (SVG artwork)
-
-- Upstream: https://github.com/googlefonts/noto-emoji (the `svg/` tree)
-- Fetched from: `registry.npmjs.org` package `@iconify-json/noto` version 1.2.7
-- License: Apache License 2.0 — notice at `assets/art/noto-emoji/LICENSE`,
-  full license text at `assets/art/noto-emoji/LICENSE-APACHE-2.0.txt`.
-  (Note: the *font binary* in that repo is under the SIL OFL; the SVG
-  artwork we use is under Apache 2.0 — we bundle only SVG artwork.)
-- Files: 12 alternate-style tiles/ambience SVGs for art-direction A/B
-  (cherry-blossom, test-tube, rock, honey-pot, mushroom, crescent-moon,
-  star, sparkles, teapot, crystal-ball, magic-wand, candle).
+The app's UI glyphs (currencies, navigation, milestones, store products,
+decor, and the match-3 special-tile overlays) are individual CC0 PNGs copied
+out of `Bit-Serenity-Studios/CC0-Assets` — the studio's canonical CC0 library,
+which mirrors first-party CC0 packs from Kenney and Quaternius. Each icon is
+referenced by name through `src/components/Icon.tsx` (native) and, for the web
+preview, embedded as a base64 data URI in the `ICON` map inside
+`docs/index.html`. No OS-rendered emoji and no MIT/Apache art remain in either
+surface.
 
 ### In-house audio
 
-All WAVs under `assets/sounds/` and `assets/music/` are synthesized from
-scratch by `scripts/gen-sounds.mjs` in this repository (sine-wave synthesis,
-no samples). They are original works owned by Bit Serenity Studios; no
-third-party license applies.
+All WAVs under `assets/music/` (the 10 non-`kenney_` loops) are synthesized
+from scratch by `scripts/gen-sounds.mjs` in this repository (sine-wave
+synthesis, no samples). They are original works owned by Bit Serenity Studios;
+no third-party license applies.
 
-## Re-extraction
+## History — removed non-CC0 art
 
-The curated SVGs can be regenerated at any time:
-
-```bash
-cd <scratch-dir>
-npm pack @iconify-json/fluent-emoji-flat @iconify-json/noto
-mkdir fluent noto && tar xzf iconify-json-fluent-emoji-flat-*.tgz -C fluent --strip-components=1 \
-  && tar xzf iconify-json-noto-*.tgz -C noto --strip-components=1
-node scripts/extract-art.mjs <scratch-dir>
-```
-
-Add icon names to the `FLUENT_WANTED` / `NOTO_WANTED` lists in
-`scripts/extract-art.mjs` to pull more.
+Earlier builds bundled Microsoft **Fluent Emoji** (MIT) and Google **Noto
+Emoji** (Apache 2.0) SVG artwork under `assets/art/fluent-emoji-flat/` and
+`assets/art/noto-emoji/`, plus a set of inlined Fluent SVG tiles in
+`docs/index.html`. Both carried attribution/notice obligations and are no
+longer a fit for a clean commercial sale. They — and the
+`scripts/extract-art.mjs` extraction pipeline that produced them — have been
+**deleted** and replaced by the CC0 icon set above. OS-rendered Unicode emoji
+that had been used as text glyphs across the native screens and the web
+preview were likewise replaced with CC0 image icons.
 
 ## Sources rejected and why
 
-- **kenney.nl / OpenGameArt.org** — CC0 assets (ideal license). kenney.nl
-  is unreachable directly from this build environment, so the packs were
-  mirrored into the private repo `Bit-Serenity-Studios/KennyNLAssets` and
-  are now used from there (see the Kenney row above). Everything Kenney
-  publishes is CC0 — no attribution, no copyleft, selling is fine.
-- **Twemoji** (CC BY 4.0) and **game-icons.net** (CC BY 3.0) — commercial
-  use fine but requires *public attribution*, a string MIT/Apache don't
-  have. Skipped to keep obligations minimal.
+- **Twemoji** (CC BY 4.0) and **game-icons.net upstream** (CC BY 3.0) —
+  commercial use fine but requires *public attribution*. Skipped to keep
+  obligations at zero. (Kenney's own "Game Icons" pack, used above, is CC0.)
 - **OpenMoji** (CC BY-SA 4.0) — share-alike could arguably reach derived
   artwork; not worth the legal ambiguity in a paid app.
+- **Microsoft Fluent Emoji** (MIT) / **Google Noto Emoji** (Apache 2.0) —
+  previously used; removed because both require shipping a license notice with
+  the app. CC0 avoids that entirely.

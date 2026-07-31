@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Canvas, Image, ImageSVG, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
+import { Canvas, Image, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
 import type { BoardSnapshot, CellPos, Tile } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
 import { palette } from '../theme';
@@ -356,12 +356,13 @@ export function BoardView({
               )}
               {showTileHere && t?.special && (
                 art.specials[t.special] ? (
-                  <ImageSVG
-                    svg={art.specials[t.special]}
+                  <Image
+                    image={art.specials[t.special]}
                     x={x + w - w * 0.42 - 2}
                     y={y + 2}
                     width={w * 0.42}
                     height={w * 0.42}
+                    fit="contain"
                   />
                 ) : (
                   <Text
@@ -444,12 +445,13 @@ export function BoardView({
                 )}
                 {t.special &&
                   (art.specials[t.special] ? (
-                    <ImageSVG
-                      svg={art.specials[t.special]}
+                    <Image
+                      image={art.specials[t.special]}
                       x={x + w - w * 0.42 - 2}
                       y={y + 2}
                       width={w * 0.42}
                       height={w * 0.42}
+                      fit="contain"
                     />
                   ) : (
                     <Text

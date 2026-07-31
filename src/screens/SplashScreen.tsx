@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii } from '../theme';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile } from '../state/profile';
 
 interface Props {
@@ -24,16 +25,16 @@ interface Props {
  */
 const SPLASH_MS = 1200;
 
-// Decorative moon glyphs that drift on a slow loop.
-const DECORATIONS: Array<{ glyph: string; x: number; y: number }> = [
-  { glyph: '🌿', x: 12, y: 15 },
-  { glyph: '✨', x: 78, y: 12 },
-  { glyph: '🌙', x: 88, y: 60 },
-  { glyph: '🍄', x: 8, y: 55 },
-  { glyph: '⭐', x: 55, y: 8 },
-  { glyph: '🕯️', x: 68, y: 78 },
-  { glyph: '🌸', x: 20, y: 82 },
-  { glyph: '💧', x: 85, y: 30 },
+// Decorative CC0 glyphs that drift on a slow loop.
+const DECORATIONS: Array<{ icon: IconName; x: number; y: number }> = [
+  { icon: 'herb', x: 12, y: 15 },
+  { icon: 'sparkle', x: 78, y: 12 },
+  { icon: 'moon', x: 88, y: 60 },
+  { icon: 'mushroom', x: 8, y: 55 },
+  { icon: 'star', x: 55, y: 8 },
+  { icon: 'candle', x: 68, y: 78 },
+  { icon: 'moonpetalDecor', x: 20, y: 82 },
+  { icon: 'droplet', x: 85, y: 30 },
 ];
 
 export function SplashScreen({ onDone }: Props): React.ReactElement {
@@ -97,7 +98,7 @@ export function SplashScreen({ onDone }: Props): React.ReactElement {
       <StatusBar style="light" />
 
       {DECORATIONS.map((d, i) => (
-        <Animated.Text
+        <Animated.View
           key={i}
           style={[
             styles.decor,
@@ -109,8 +110,8 @@ export function SplashScreen({ onDone }: Props): React.ReactElement {
             },
           ]}
         >
-          {d.glyph}
-        </Animated.Text>
+          <Icon name={d.icon} size={26} />
+        </Animated.View>
       ))}
 
       <Animated.View
@@ -123,7 +124,7 @@ export function SplashScreen({ onDone }: Props): React.ReactElement {
         ]}
       >
         <View style={styles.crest}>
-          <Text style={styles.crestGlyph}>🌙</Text>
+          <Icon name="moon" size={66} />
         </View>
         <Text style={styles.title}>Moonpetal</Text>
         <Text style={styles.titleSub}>Apothecary</Text>
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
   },
   decor: {
     position: 'absolute',
-    fontSize: 26,
   },
   hero: {
     alignItems: 'center',

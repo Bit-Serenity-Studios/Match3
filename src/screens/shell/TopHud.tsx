@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
+import { Icon, type IconName } from '../../components/Icon';
 import { useProfile } from '../../state/profile';
 import { useUI } from '../../state/ui';
 import { click } from '../../audio/click';
@@ -29,28 +30,32 @@ export function TopHud(): React.ReactElement {
           style={styles.avatar}
           resizeMode="contain"
         >
-          <Text style={styles.avatarGlyph}>🌙</Text>
+          <Icon name="moon" size={22} />
           <View style={styles.avatarBadge}>
             <Text style={styles.avatarBadgeText}>{level}</Text>
           </View>
         </ImageBackground>
       </Pressable>
 
-      <Chip glyph="🏵️" value={fmt(moonstones)} tint={palette.candlelight} />
-      <Chip glyph="🪙" value={fmt(coins)} tint={palette.candlelight} />
-      <Chip glyph="⭐" value={fmt(gems)} tint={palette.purple} />
+      <Chip icon="moonstone" value={fmt(moonstones)} />
+      <Chip icon="coin" value={fmt(coins)} />
+      <Chip icon="star" value={fmt(gems)} />
 
       <Pressable style={styles.menuBtn} onPress={click(openHeaderMenu)}>
-        <Text style={styles.menuGlyph}>≡</Text>
+        <View style={styles.menuBars}>
+          <View style={styles.menuBar} />
+          <View style={styles.menuBar} />
+          <View style={styles.menuBar} />
+        </View>
       </Pressable>
     </View>
   );
 }
 
-function Chip({ glyph, value, tint }: { glyph: string; value: string; tint: string }) {
+function Chip({ icon, value }: { icon: IconName; value: string }) {
   return (
     <View style={styles.chip}>
-      <Text style={[styles.chipGlyph, { color: tint }]}>{glyph}</Text>
+      <Icon name={icon} size={16} />
       <Text style={styles.chipValue}>{value}</Text>
     </View>
   );
@@ -82,7 +87,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.xs,
   },
-  avatarGlyph: { fontSize: 18 },
   avatarBadge: {
     position: 'absolute',
     right: -4,
@@ -113,7 +117,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  chipGlyph: { fontSize: 14 },
   chipValue: { color: palette.parchment, fontSize: 12, fontWeight: '700', flexShrink: 1 },
   menuBtn: {
     width: 40,
@@ -125,5 +128,10 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderWidth: 1,
   },
-  menuGlyph: { color: palette.parchment, fontSize: 22, fontWeight: '700' },
+  menuBars: { width: 18, height: 14, justifyContent: 'space-between' },
+  menuBar: {
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: palette.parchment,
+  },
 });

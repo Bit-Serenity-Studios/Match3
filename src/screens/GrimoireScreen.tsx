@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile, UNLOCK_GRIMOIRE_AT_MOONSTONES } from '../state/profile';
 import { ShellFrame } from './shell/ShellFrame';
 
@@ -17,7 +18,7 @@ export function GrimoireScreen(): React.ReactElement {
     <ShellFrame>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.hero}>
-          <Text style={styles.heroGlyph}>📖</Text>
+          <Icon name="grimoire" size={48} style={styles.heroGlyph} />
           <Text style={styles.heroTitle}>Grimoire</Text>
           <Text style={styles.heroSub}>
             Every match adds a page to your recipe book.
@@ -25,19 +26,26 @@ export function GrimoireScreen(): React.ReactElement {
         </View>
 
         <View style={styles.pillars}>
-          <Pillar glyph="✨" text="Collect and complete pages" />
-          <Pillar glyph="🔁" text="Trade duplicates with covenmates" />
-          <Pillar glyph="🎁" text="Win prizes for completed volumes" />
+          <Pillar icon="sparkle" text="Collect and complete pages" />
+          <Pillar icon="trade" text="Trade duplicates with covenmates" />
+          <Pillar icon="gift" text="Win prizes for completed volumes" />
         </View>
 
         {!unlocked ? (
           <View style={styles.lock}>
-            <Text style={styles.lockLine}>
-              🔒 Earn your first pages by playing a few matches
-            </Text>
-            <Text style={styles.lockSub}>
-              Unlocks at 🏵️ {UNLOCK_GRIMOIRE_AT_MOONSTONES} · You have {stones}
-            </Text>
+            <View style={styles.lockRow}>
+              <Icon name="lock" size={16} />
+              <Text style={styles.lockLine}>
+                Earn your first pages by playing a few matches
+              </Text>
+            </View>
+            <View style={styles.lockSubRow}>
+              <Text style={styles.lockSub}>Unlocks at</Text>
+              <Icon name="moonstone" size={13} />
+              <Text style={styles.lockSub}>
+                {UNLOCK_GRIMOIRE_AT_MOONSTONES} · You have {stones}
+              </Text>
+            </View>
           </View>
         ) : (
           <>
@@ -52,10 +60,10 @@ export function GrimoireScreen(): React.ReactElement {
   );
 }
 
-function Pillar({ glyph, text }: { glyph: string; text: string }) {
+function Pillar({ icon, text }: { icon: IconName; text: string }) {
   return (
     <View style={styles.pillar}>
-      <Text style={styles.pillarGlyph}>{glyph}</Text>
+      <Icon name={icon} size={22} />
       <Text style={styles.pillarText}>{text}</Text>
     </View>
   );
@@ -86,7 +94,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     paddingVertical: spacing.md,
   },
-  heroGlyph: { fontSize: 48, marginBottom: spacing.sm },
+  heroGlyph: { marginBottom: spacing.sm },
+  lockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  lockSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
   heroTitle: { ...typography.h1, fontSize: 30 },
   heroSub: {
     ...typography.body,
@@ -121,7 +142,7 @@ const styles = StyleSheet.create({
     color: palette.candlelight,
     textAlign: 'center',
   },
-  lockSub: { ...typography.small, marginTop: spacing.xs, textAlign: 'center' },
+  lockSub: { ...typography.small, textAlign: 'center' },
   section: {
     ...typography.small,
     textTransform: 'uppercase',

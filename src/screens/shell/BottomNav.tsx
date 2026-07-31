@@ -1,18 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
+import { Icon, type IconName } from '../../components/Icon';
 import { useUI, type Screen } from '../../state/ui';
 import { useProfile, UNLOCK_HUB_AT } from '../../state/profile';
 import { click } from '../../audio/click';
 
 type Tab = 'store' | 'covens' | 'home' | 'moonrise' | 'grimoire';
 
-const TABS: Array<{ id: Tab; label: string; glyph: string; screen: Screen }> = [
-  { id: 'store', label: 'Market', glyph: '🏪', screen: 'store' },
-  { id: 'covens', label: 'Covens', glyph: '🐾', screen: 'covens' },
-  { id: 'home', label: 'Cauldron', glyph: '🏠', screen: 'home' },
-  { id: 'moonrise', label: 'Moonrise', glyph: '📅', screen: 'moonrise' },
-  { id: 'grimoire', label: 'Grimoire', glyph: '📖', screen: 'grimoire' },
+const TABS: Array<{ id: Tab; label: string; icon: IconName; screen: Screen }> = [
+  { id: 'store', label: 'Market', icon: 'market', screen: 'store' },
+  { id: 'covens', label: 'Covens', icon: 'covens', screen: 'covens' },
+  { id: 'home', label: 'Cauldron', icon: 'home', screen: 'home' },
+  { id: 'moonrise', label: 'Moonrise', icon: 'moonrise', screen: 'moonrise' },
+  { id: 'grimoire', label: 'Grimoire', icon: 'grimoire', screen: 'grimoire' },
 ];
 
 /**
@@ -56,7 +57,11 @@ export function BottomNav(): React.ReactElement {
             style={[styles.tab, active && styles.tabActive]}
             onPress={click(() => onTab(t.id))}
           >
-            <Text style={[styles.glyph, active && styles.glyphActive]}>{t.glyph}</Text>
+            <Icon
+              name={t.icon}
+              size={24}
+              tint={active ? palette.bgDeep : palette.parchmentDim}
+            />
             <Text style={[styles.label, active && styles.labelActive]}>{t.label}</Text>
           </Pressable>
         );
@@ -86,8 +91,6 @@ const styles = StyleSheet.create({
     marginTop: -spacing.sm,
     paddingTop: spacing.md,
   },
-  glyph: { fontSize: 22 },
-  glyphActive: {},
   label: {
     color: palette.parchmentDim,
     fontSize: 10,

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { CurrencyAmount } from '../components/Currency';
 import { CONTINUE_EXTRA_MOVES, priceForContinue } from '../monetization/continue';
 import { click } from '../audio/click';
 import type { ContinueSummary } from '../monetization/continue';
@@ -77,7 +78,13 @@ export function ContinueScreen({
         onPress={click(onContinue)}
       >
         <Text style={styles.buyTitle}>+{CONTINUE_EXTRA_MOVES} Moves</Text>
-        <Text style={styles.buyPrice}>{price} ⭐</Text>
+        <CurrencyAmount
+          kind="gems"
+          amount={price}
+          size={15}
+          tint={palette.bgDeep}
+          textStyle={styles.buyPrice}
+        />
       </Pressable>
       {!canAfford && (
         <Text style={[typography.small, { color: palette.danger, marginTop: spacing.xs }]}>

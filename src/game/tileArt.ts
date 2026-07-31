@@ -1,15 +1,16 @@
-import { useSVG, useImage, type SkSVG, type SkImage } from '@shopify/react-native-skia';
+import { useImage, type SkImage } from '@shopify/react-native-skia';
 import type { SpecialKind, TileColor } from '../engine/types';
 
 /**
- * Board art. Tiles are Kenney Puzzle Pack gems (CC0, see ASSETS_LICENSES.md)
- * loaded as Skia images; specials are Fluent Emoji (MIT) SVGs. One hook so
- * BoardView stays clean. Both load async; entries are null until decoded,
- * and BoardView falls back to the text glyphs for those first frames.
+ * Board art. Tiles are Kenney Puzzle Pack gems and specials are CC0 icons
+ * (Kenney / Quaternius packs — see ASSETS_LICENSES.md), all public domain so
+ * the build ships clean for sale. Loaded as Skia images through one hook so
+ * BoardView stays clean. Every entry loads async and is null until decoded;
+ * BoardView falls back to the text glyphs for those first frames.
  */
 export interface TileArt {
   tiles: Record<TileColor, SkImage | null>;
-  specials: Record<SpecialKind, SkSVG | null>;
+  specials: Record<SpecialKind, SkImage | null>;
 }
 
 export function useTileArt(): TileArt {
@@ -18,11 +19,11 @@ export function useTileArt(): TileArt {
   const runestone = useImage(require('../../assets/art/kenney-gems/runestone.png'));
   const resin = useImage(require('../../assets/art/kenney-gems/resin.png'));
   const mushroom = useImage(require('../../assets/art/kenney-gems/mushroom.png'));
-  const bomb = useSVG(require('../../assets/art/fluent-emoji-flat/bomb.svg'));
-  const bolt = useSVG(require('../../assets/art/fluent-emoji-flat/high-voltage.svg'));
-  const rainbow = useSVG(require('../../assets/art/fluent-emoji-flat/rainbow.svg'));
-  const collision = useSVG(require('../../assets/art/fluent-emoji-flat/collision.svg'));
-  const sparkles = useSVG(require('../../assets/art/fluent-emoji-flat/sparkles.svg'));
+  const bomb = useImage(require('../../assets/icons/bomb.png'));
+  const bolt = useImage(require('../../assets/icons/bolt.png'));
+  const prism = useImage(require('../../assets/icons/prism.png'));
+  const collision = useImage(require('../../assets/icons/collision.png'));
+  const nova = useImage(require('../../assets/icons/nova.png'));
 
   return {
     tiles: { moonpetal, vial, runestone, resin, mushroom },
@@ -31,8 +32,8 @@ export function useTileArt(): TileArt {
       lineH: bolt,
       lineV: bolt,
       cross: collision,
-      nova: sparkles,
-      prism: rainbow,
+      nova,
+      prism,
     },
   };
 }

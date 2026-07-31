@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii, typography } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { Icon, type IconName } from '../components/Icon';
 import { click } from '../audio/click';
 
 interface Props {
-  glyph: string;
+  icon: IconName;
   title: string;
   body: string;
   actionLabel: string;
@@ -19,7 +20,7 @@ interface Props {
  * never gets confused with monetization surface.
  */
 export function MilestoneOverlay({
-  glyph,
+  icon,
   title,
   body,
   actionLabel,
@@ -29,7 +30,7 @@ export function MilestoneOverlay({
     <View style={styles.backdrop}>
       <View style={styles.card}>
         <View style={styles.crest}>
-          <Text style={styles.crestGlyph}>{glyph}</Text>
+          <Icon name={icon} size={52} />
         </View>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>

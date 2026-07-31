@@ -86,7 +86,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'friends' ? (
         <PlaceholderScreen
           title="Friends"
-          glyph="🐾"
+          icon="friends"
           blurb="Find brewers in your circle, share ingredients, and keep tabs on each other's Moonrise duels."
           bullets={[
             'Add friends by moonpetal code',
@@ -98,7 +98,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'leaderboards' ? (
         <PlaceholderScreen
           title="Leaderboards"
-          glyph="🏆"
+          icon="trophy"
           blurb="Weekly and all-time rankings by moonstones. Compete against covens across the garden."
           bullets={[
             'Global weekly rank',
@@ -110,7 +110,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'news' ? (
         <PlaceholderScreen
           title="News"
-          glyph="📰"
+          icon="news"
           blurb="Fresh moon phases, seasonal events, and patch notes from the apothecary."
           bullets={[
             'Feature announcements',
@@ -122,7 +122,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'joinUs' ? (
         <PlaceholderScreen
           title="Join Us"
-          glyph="💌"
+          icon="heart"
           blurb="The moonpetal garden grows by lantern light. Come sit at the fire — we're hiring, testing, and swapping recipes."
           bullets={[
             'Discord for players and testers',
@@ -134,7 +134,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'connectAccount' ? (
         <PlaceholderScreen
           title="Connect Account"
-          glyph="🔗"
+          icon="link"
           blurb="Sign in to sync your progress across devices and back up your currency and companions safely."
           bullets={[
             'Sign in with Apple',
@@ -146,7 +146,7 @@ export default function App(): React.ReactElement {
       ) : screen === 'support' ? (
         <PlaceholderScreen
           title="Support"
-          glyph="🛟"
+          icon="support"
           blurb="Something amiss with the cauldron? Send us a note and the moon will answer."
           bullets={[
             'support@bitserenity.studio',

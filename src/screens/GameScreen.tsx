@@ -13,6 +13,7 @@ import type { CellPos, GameState, LevelDef } from '../engine/types';
 import { BoardView } from '../game/BoardView';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { Icon } from '../components/Icon';
 import { LEVELS, getLevelByIndex, isEndlessIndex } from '../levels/catalog';
 import {
   UNLOCK_HUB_AT,
@@ -483,7 +484,10 @@ export function GameScreen() {
 
       {state.status === 'won' && (
         <View style={styles.overlay}>
-          <Text style={typography.h1}>✨ Brewed!</Text>
+          <View style={styles.winTitleRow}>
+            <Icon name="sparkle" size={26} />
+            <Text style={typography.h1}>Brewed!</Text>
+          </View>
           <Text style={[typography.body, { marginTop: spacing.sm, textAlign: 'center' }]}>
             The moon smiled on your work tonight.
           </Text>
@@ -531,7 +535,10 @@ export function GameScreen() {
                 clearOffer();
               }}
             >
-              <Text style={styles.btnLabel}>See offer 🎁</Text>
+              <View style={styles.offerRow}>
+                <Text style={styles.btnLabel}>See offer</Text>
+                <Icon name="gift" size={18} />
+              </View>
             </Pressable>
           )}
         </View>
@@ -541,7 +548,7 @@ export function GameScreen() {
 
       {milestone === 'tutorialDone' && (
         <MilestoneOverlay
-          glyph="🎓"
+          icon="graduation"
           title="You've finished the tutorial!"
           body="You've cleared every training level. From here the recipes get more clever — new blockers, tougher targets, and richer rewards."
           actionLabel="Onward"
@@ -550,7 +557,7 @@ export function GameScreen() {
       )}
       {milestone === 'endlessStart' && (
         <MilestoneOverlay
-          glyph="♾️"
+          icon="infinity"
           title="Endless Cauldron"
           body="You've cleared all 60 crafted levels. The garden keeps growing — new levels are brewed on the fly, each a little tougher than the last. See how deep you can go."
           actionLabel="Keep brewing"
@@ -669,5 +676,15 @@ const styles = StyleSheet.create({
     color: palette.bgDeep,
     fontWeight: '700',
     fontSize: 16,
+  },
+  winTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  offerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
 });

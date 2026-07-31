@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { Icon } from '../components/Icon';
+import { RewardChips } from '../components/Currency';
 import { useMonetization, currentPassLevel } from '../state/monetization';
 import { useUI } from '../state/ui';
 import { CHALLENGES, PASS_REWARDS, XP_PER_LEVEL, PASS_LEVELS } from '../monetization/battlePass';
@@ -70,9 +72,12 @@ export function PassScreen(): React.ReactElement {
                 <Text style={[typography.body, { color: palette.parchment }]}>{c.title}</Text>
                 <Text style={typography.small}>+{c.xp} XP</Text>
               </View>
-              <Text style={typography.small}>
-                {c.cadence.toUpperCase()} · {progress}/{c.target}{done ? ' ✓' : ''}
-              </Text>
+              <View style={styles.metaRow}>
+                <Text style={typography.small}>
+                  {c.cadence.toUpperCase()} · {progress}/{c.target}
+                </Text>
+                {done && <Icon name="check" size={12} tint={palette.parchment} />}
+              </View>
             </View>
           );
         })}
@@ -93,10 +98,7 @@ export function PassScreen(): React.ReactElement {
                   style={[styles.trackBtn, (!unlocked || freeClaimed) && { opacity: 0.5 }]}
                   onPress={() => claimReward('free', r.level, Date.now())}
                 >
-                  <Text style={styles.trackLabel}>
-                    Free · {rewardSummary(r.free)}
-                    {freeClaimed ? ' ✓' : ''}
-                  </Text>
+                  <RewardLabel prefix="Free" reward={r.free} claimed={freeClaimed} />
                 </Pressable>
                 <Pressable
                   disabled={!unlocked || !pass.premiumUnlocked || premiumClaimed}
@@ -107,10 +109,7 @@ export function PassScreen(): React.ReactElement {
                   ]}
                   onPress={() => claimReward('premium', r.level, Date.now())}
                 >
-                  <Text style={styles.trackLabel}>
-                    Premium · {rewardSummary(r.premium)}
-                    {premiumClaimed ? ' ✓' : ''}
-                  </Text>
+                  <RewardLabel prefix="Premium" reward={r.premium} claimed={premiumClaimed} />
                 </Pressable>
               </View>
             </View>
@@ -121,13 +120,31 @@ export function PassScreen(): React.ReactElement {
   );
 }
 
-function rewardSummary(r?: { coins?: number; embers?: number; gems?: number }): string {
-  if (!r) return '—';
-  const parts: string[] = [];
-  if (r.coins) parts.push(`${r.coins}🪙`);
-  if (r.embers) parts.push(`${r.embers}🔥`);
-  if (r.gems) parts.push(`${r.gems}⭐`);
-  return parts.join(' ');
+function RewardLabel({
+  prefix,
+  reward,
+  claimed,
+}: {
+  prefix: string;
+  reward?: { coins?: number; embers?: number; gems?: number };
+  claimed: boolean;
+}): React.ReactElement {
+  const hasAny = !!(reward && (reward.coins || reward.embers || reward.gems));
+  return (
+    <View style={styles.trackLabelRow}>
+      <Text style={styles.trackLabel}>{prefix} ·</Text>
+      {hasAny ? (
+        <RewardChips
+          grants={{ coins: reward?.coins, embers: reward?.embers, gems: reward?.gems }}
+          size={12}
+          textStyle={styles.trackLabel}
+        />
+      ) : (
+        <Text style={styles.trackLabel}>—</Text>
+      )}
+      {claimed && <Icon name="check" size={12} tint={palette.parchment} />}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -186,4 +203,12 @@ const styles = StyleSheet.create({
   },
   trackPremium: { backgroundColor: palette.purpleDeep },
   trackLabel: { color: palette.parchment, fontSize: 12, textAlign: 'center' },
+  trackLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

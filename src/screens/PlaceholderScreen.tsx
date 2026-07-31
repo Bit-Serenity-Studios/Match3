@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, radii, typography } from '../theme';
 import { WoodButton } from '../components/WoodButton';
+import { Icon, type IconName } from '../components/Icon';
 import { useUI } from '../state/ui';
 import { click } from '../audio/click';
 
 interface Props {
   title: string;
-  glyph: string;
+  icon: IconName;
   blurb: string;
   bullets: string[];
   cta?: { label: string; onPress: () => void };
@@ -22,7 +23,7 @@ interface Props {
  */
 export function PlaceholderScreen({
   title,
-  glyph,
+  icon,
   blurb,
   bullets,
   cta,
@@ -39,7 +40,7 @@ export function PlaceholderScreen({
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.crest}>
-          <Text style={styles.crestGlyph}>{glyph}</Text>
+          <Icon name={icon} size={52} />
         </View>
         <Text style={styles.blurb}>{blurb}</Text>
         <View style={styles.bulletBox}>
