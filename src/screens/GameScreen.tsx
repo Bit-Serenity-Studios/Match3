@@ -147,14 +147,18 @@ export function GameScreen() {
   const [ended, setEnded] = useState(false);
   const [charge, setCharge] = useState(0);
   const [castSeed, setCastSeed] = useState(0);
+  const advancingRef = useRef(false);
 
   useEffect(() => {
-    // Read the fail count via getState rather than subscribing to it:
-    // registerWin/registerLoss mutate consecutiveFails, and if this effect
-    // depended on it the board would rebuild the instant you win — wiping the
-    // "won" overlay before you can tap Next, trapping you on the level (most
-    // visibly, forever on 001). The board should only re-init when the level
-    // (tunedLevel) or equipped companion changes.
+    // Key this effect on the level INDEX and equipped companion — never on the
+    // tunedLevel OBJECT or consecutiveFails. registerWin() mutates both
+    // consecutiveFails AND ownedCompanions on every win, and the companion
+    // array churns tunedLevel's identity whenever a companion is equipped.
+    // Depending on either would rebuild the board the instant you win — wiping
+    // the "won" overlay before you can tap Next and trapping you on the level
+    // (forever on 001 with no companion; on ANY level once a companion is
+    // equipped, which also silently farms rewards). Read fails via getState.
+    advancingRef.current = false;
     const fails = useProfile.getState().consecutiveFails[tunedLevel.id] ?? 0;
     setState(initialState(tunedLevel, fails));
     setEnded(false);
@@ -169,7 +173,7 @@ export function GameScreen() {
       companionId: equippedId ?? null,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tunedLevel, equippedId]);
+  }, [currentLevelIndex, equippedId]);
 
   const boardSize = Math.min(dims.width - spacing.lg * 2, 420);
   const companion = equippedId ? getCompanion(equippedId) : null;
@@ -225,7 +229,7 @@ export function GameScreen() {
             const rew = rewardsFor(r.next);
             registerWin(r.next.levelId, rew);
             streakWin(r.next.levelId);
-            dripPiggy(r.next.levelId.includes('hard') ? 'hardLevelWin' : 'levelWin');
+            dripPiggy(tunedLevel.archetype === 'hard' ? 'hardLevelWin' : 'levelWin');
             resetContinueAttempts();
             progressPassChallenge('daily.win3', 1, Date.now());
             progressPassChallenge('weekly.win15', 1, Date.now());
@@ -317,6 +321,12 @@ export function GameScreen() {
   }, [ability, abilityReady, state, castSeed]);
 
   const onNext = useCallback(() => {
+    // Guard against a double-tap: on hub-locked levels (1-3) onNext doesn't
+    // navigate away, so a fast second press before the board re-inits would
+    // call advanceLevel() twice and skip a level. The board-init effect clears
+    // this latch when the next level loads.
+    if (advancingRef.current) return;
+    advancingRef.current = true;
     advanceLevel();
     if (highestUnlocked >= UNLOCK_HUB_AT) goToHome();
   }, [advanceLevel, highestUnlocked, goToHome]);
@@ -326,8 +336,12 @@ export function GameScreen() {
     setEnded(false);
     setFlash(0);
     setCharge(0);
+    // A retry is a fresh session of this level: reset the escalating continue
+    // price and clear any stale "See offer" prompt left by a prior give-up.
+    resetContinueAttempts();
+    clearOffer();
     closeContinue();
-  }, [tunedLevel, consecutiveFails, closeContinue]);
+  }, [tunedLevel, consecutiveFails, resetContinueAttempts, clearOffer, closeContinue]);
 
   const onBuyContinue = useCallback(() => {
     if (state.status !== 'lost') return;
@@ -351,6 +365,9 @@ export function GameScreen() {
     const fails = (consecutiveFails[level.id] ?? 0) + 1;
     const offer = maybeMintOffer(fails, level.id, level, Date.now());
     if (offer) showOffer(offer.sku);
+    // Giving up ends the level session — the next attempt should start at the
+    // base continue price, not the escalated one.
+    resetContinueAttempts();
     closeContinue();
   }, [
     state.levelId,
@@ -360,6 +377,7 @@ export function GameScreen() {
     consecutiveFails,
     maybeMintOffer,
     showOffer,
+    resetContinueAttempts,
     closeContinue,
   ]);
 
@@ -505,7 +523,7 @@ export function GameScreen() {
           )}
           {!isLastLevel ? (
             <WoodButton
-              label={hubUnlocked ? 'Back to Apothecary' : 'Next level'}
+              label={hubUnlocked ? 'Back to Home' : 'Next level'}
               onPress={click(onNext)}
               labelStyle={styles.btnLabel}
             />

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii } from '../../theme';
 import { Icon, type IconName } from '../../components/Icon';
 import { useUI, type Screen } from '../../state/ui';
-import { useProfile, UNLOCK_HUB_AT } from '../../state/profile';
 import { click } from '../../audio/click';
 
 type Tab = 'store' | 'covens' | 'home' | 'moonrise' | 'grimoire';
@@ -28,9 +27,6 @@ export function BottomNav(): React.ReactElement {
   const goToHome = useUI((s) => s.goToHome);
   const goToMoonrise = useUI((s) => s.goToMoonrise);
   const goToGrimoire = useUI((s) => s.goToGrimoire);
-  const goToHub = useUI((s) => s.goToHub);
-  const highest = useProfile((s) => s.highestUnlocked);
-  const hubUnlocked = highest >= UNLOCK_HUB_AT;
 
   const onTab = (t: Tab) => {
     switch (t) {
@@ -39,7 +35,9 @@ export function BottomNav(): React.ReactElement {
       case 'covens':
         return goToCovens();
       case 'home':
-        return hubUnlocked ? goToHome() : goToHub();
+        // The center "Cauldron" tab is the always-available Home landing.
+        // (The Apothecary HubScreen is reached via the in-game "Hub" button.)
+        return goToHome();
       case 'moonrise':
         return goToMoonrise();
       case 'grimoire':

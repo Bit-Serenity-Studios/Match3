@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AppState } from 'react-native';
 import { SplashScreen } from './src/screens/SplashScreen';
 import { GameScreen } from './src/screens/GameScreen';
 import { HubScreen } from './src/screens/HubScreen';
@@ -21,6 +22,7 @@ import { useUI } from './src/state/ui';
 import { useTelemetry } from './src/telemetry/logger';
 import { useRetention } from './src/state/retention';
 import { useProfile } from './src/state/profile';
+import { useMonetization } from './src/state/monetization';
 import { initSoundEngine, sfx } from './src/audio/soundEffects';
 import { initMusic, refreshMusicFromProfile } from './src/audio/musicPlayer';
 import { APP_VERSION } from './src/appMeta';
@@ -36,7 +38,20 @@ export default function App(): React.ReactElement {
 
   useEffect(() => {
     startSession(Date.now(), APP_VERSION);
-    refreshCalendar(Date.now());
+    // Foreground catch-up — run on cold start AND every return to foreground.
+    // Otherwise a resident app that crosses a UTC-day boundary never resets a
+    // missed daily-login streak, and subscribers never receive their daily
+    // gem drip. Both calls are self-guarding (decay is a no-op without a miss;
+    // the drip is a no-op unless subscribed and 24h have elapsed).
+    const onForeground = () => {
+      const now = Date.now();
+      refreshCalendar(now);
+      useMonetization.getState().claimSubscriptionDrip(now);
+    };
+    onForeground();
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') onForeground();
+    });
     initSoundEngine().then(() => sfx('splash'));
     initMusic();
     // Watch the profile for any audio toggle change and reconcile the
@@ -44,6 +59,7 @@ export default function App(): React.ReactElement {
     const unsub = useProfile.subscribe(refreshMusicFromProfile);
     return () => {
       endSession(Date.now());
+      appStateSub.remove();
       unsub();
     };
   }, [startSession, endSession, refreshCalendar]);

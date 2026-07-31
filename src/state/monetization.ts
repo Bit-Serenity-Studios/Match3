@@ -105,6 +105,7 @@ export interface MonetizationSlice {
   progressPassChallenge(challengeId: string, delta: number, now: number): void;
   claimPassReward(track: 'free' | 'premium', level: number, now: number): Grants | null;
   unlockPassPremium(now: number): void;
+  refreshPass(now: number): void;
 
   maybeMintOffer(fails: number, levelId: string, level: LevelDef, now: number): ActiveOffer | null;
   purgeOffers(now: number): void;
@@ -267,6 +268,11 @@ export const useMonetization = create<MonetizationSlice>()(
       },
       unlockPassPremium(now) {
         set((s) => ({ pass: unlockPremium(rolloverIfNeeded(s.pass, now)) }));
+      },
+      refreshPass(now) {
+        const s = get();
+        const pass = rolloverIfNeeded(s.pass, now);
+        if (pass !== s.pass) set({ pass });
       },
 
       maybeMintOffer(fails, levelId, level, now) {

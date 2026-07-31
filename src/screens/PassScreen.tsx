@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
@@ -17,7 +17,14 @@ export function PassScreen(): React.ReactElement {
   const claimReward = useMonetization((s) => s.claimPassReward);
   const purchaseProduct = useMonetization((s) => s.purchaseProduct);
   const unlockPremium = useMonetization((s) => s.unlockPassPremium);
+  const refreshPass = useMonetization((s) => s.refreshPass);
   const goToHub = useUI((s) => s.goToHub);
+
+  // Roll the season over on open so the displayed pass state and the claim
+  // logic agree — otherwise a claim at a season boundary silently resets it.
+  useEffect(() => {
+    refreshPass(Date.now());
+  }, [refreshPass]);
 
   const buyPremium = async () => {
     const r = await getMonetization().purchase(BATTLE_PASS.sku);

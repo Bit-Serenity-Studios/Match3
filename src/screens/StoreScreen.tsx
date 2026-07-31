@@ -81,9 +81,8 @@ export function StoreScreen(): React.ReactElement {
   const purchasedSkus = useMonetization((s) => s.purchasedSkus);
   const purchaseProduct = useMonetization((s) => s.purchaseProduct);
   const crackPiggy = useMonetization((s) => s.crackPiggy);
-  const activateSubscription = useMonetization((s) => s.activateSubscription);
   const unlockPassPremium = useMonetization((s) => s.unlockPassPremium);
-  const goToHub = useUI((s) => s.goToHub);
+  const goToHome = useUI((s) => s.goToHome);
 
   const buyProduct = useCallback(
     async (product: ProductDef) => {
@@ -99,7 +98,9 @@ export function StoreScreen(): React.ReactElement {
         return;
       }
       if (product.kind === 'subscription') {
-        activateSubscription(Date.now());
+        // purchaseProduct -> applyGrants already activates the subscription via
+        // grants.subscriptionDays (30d). Calling activateSubscription here too
+        // stacked a second period — one purchase granted 60 days. Grant once.
         purchaseProduct(product, Date.now());
         return;
       }
@@ -113,7 +114,7 @@ export function StoreScreen(): React.ReactElement {
         track('offer_purchased', { sku: product.sku, levelId: 'unknown' });
       }
     },
-    [purchaseProduct, crackPiggy, activateSubscription, unlockPassPremium],
+    [purchaseProduct, crackPiggy, unlockPassPremium],
   );
 
   const starterBought = purchasedSkus.includes(STARTER_BUNDLE.sku);
@@ -126,7 +127,7 @@ export function StoreScreen(): React.ReactElement {
           <Text style={typography.h1}>Store</Text>
           <Text style={typography.small}>Support the apothecary.</Text>
         </View>
-        <Pressable style={styles.backBtn} onPress={click(() => goToHub())}>
+        <Pressable style={styles.backBtn} onPress={click(() => goToHome())}>
           <Text style={styles.backLabel}>Back</Text>
         </Pressable>
       </View>

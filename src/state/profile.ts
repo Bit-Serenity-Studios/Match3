@@ -139,6 +139,11 @@ export const UNLOCK_COVENS_AT_MOONSTONES = 550;
 export const UNLOCK_MOONRISE_AT_MOONSTONES = 800;
 export const UNLOCK_GRIMOIRE_AT_MOONSTONES = 200;
 
+/** Moonstones granted per level win. Mirrors the web preview (+5/win) so the
+ *  currency actually accrues and the moonstone-gated screens (Grimoire, Covens,
+ *  Moonrise) can be reached — previously nothing ever awarded moonstones. */
+export const MOONSTONES_PER_WIN = 5;
+
 export const useProfile = create<ProfileState>()(
   persist(
     (set, get) => ({
@@ -233,6 +238,7 @@ export const useProfile = create<ProfileState>()(
             consecutiveFails: nextFails,
             coins: s.coins + coinsGain,
             embers: s.embers + embersGain,
+            moonstones: s.moonstones + MOONSTONES_PER_WIN,
             ownedCompanions: companions,
           };
         });
