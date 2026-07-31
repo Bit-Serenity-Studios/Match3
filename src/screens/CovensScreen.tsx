@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile, UNLOCK_COVENS_AT_MOONSTONES } from '../state/profile';
 import { ShellFrame } from './shell/ShellFrame';
 
@@ -17,7 +18,7 @@ export function CovensScreen(): React.ReactElement {
     <ShellFrame>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.hero}>
-          <Text style={styles.heroGlyph}>🐾</Text>
+          <Icon name="covens" size={48} style={styles.heroGlyph} />
           <Text style={styles.heroTitle}>Covens</Text>
           <Text style={styles.heroSub}>
             Brew with others. Share ingredients. Grow together.
@@ -25,22 +26,27 @@ export function CovensScreen(): React.ReactElement {
         </View>
 
         <View style={styles.pillars}>
-          <Pillar glyph="🎁" text="Free coven-shared rewards" />
-          <Pillar glyph="🔄" text="Trade cards with covenmates" />
-          <Pillar glyph="💬" text="Coven chat & strategy" />
-          <Pillar glyph="🌟" text="Coven-only weekly events" />
+          <Pillar icon="gift" text="Free coven-shared rewards" />
+          <Pillar icon="trade" text="Trade cards with covenmates" />
+          <Pillar icon="chat" text="Coven chat & strategy" />
+          <Pillar icon="star" text="Coven-only weekly events" />
         </View>
 
         <View style={styles.lockOrCta}>
           {unlocked ? (
-            <Text style={styles.ctaText}>
-              You’re at 🏵️ {stones}. Time to find a coven.
-            </Text>
+            <View style={styles.inlineRow}>
+              <Text style={styles.ctaText}>You’re at</Text>
+              <Icon name="moonstone" size={16} />
+              <Text style={styles.ctaText}>{stones}. Time to find a coven.</Text>
+            </View>
           ) : (
             <>
-              <Text style={styles.lockLine}>
-                🔒 UNLOCKS AT 🏵️ {UNLOCK_COVENS_AT_MOONSTONES}
-              </Text>
+              <View style={styles.inlineRow}>
+                <Icon name="lock" size={14} />
+                <Text style={styles.lockLine}>UNLOCKS AT</Text>
+                <Icon name="moonstone" size={16} />
+                <Text style={styles.lockLine}>{UNLOCK_COVENS_AT_MOONSTONES}</Text>
+              </View>
               <Text style={styles.progress}>
                 {stones} / {UNLOCK_COVENS_AT_MOONSTONES}
               </Text>
@@ -60,10 +66,10 @@ export function CovensScreen(): React.ReactElement {
   );
 }
 
-function Pillar({ glyph, text }: { glyph: string; text: string }) {
+function Pillar({ icon, text }: { icon: IconName; text: string }) {
   return (
     <View style={styles.pillar}>
-      <Text style={styles.pillarGlyph}>{glyph}</Text>
+      <Icon name={icon} size={22} />
       <Text style={styles.pillarText}>{text}</Text>
     </View>
   );
@@ -76,7 +82,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     paddingVertical: spacing.md,
   },
-  heroGlyph: { fontSize: 48, marginBottom: spacing.sm },
+  heroGlyph: { marginBottom: spacing.sm },
+  inlineRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   heroTitle: { ...typography.h1, fontSize: 30 },
   heroSub: {
     ...typography.body,

@@ -47,6 +47,29 @@ export function cellsClearedByActivation(
       }
       return out;
     }
+    case 'nova': {
+      // 5x5 blast (Chebyshev radius 2) — the top-tier area clear.
+      const rad = ENGINE_CONFIG.specials.novaRadius;
+      for (let dr = -rad; dr <= rad; dr++) {
+        for (let dc = -rad; dc <= rad; dc++) {
+          const p = { row: at.row + dr, col: at.col + dc };
+          if (isPlayable(b, p)) out.push(p);
+        }
+      }
+      return out;
+    }
+    case 'cross': {
+      // Full row AND full column through the tile.
+      for (let c = 0; c < b.width; c++) {
+        const p = { row: at.row, col: c };
+        if (isPlayable(b, p)) out.push(p);
+      }
+      for (let r = 0; r < b.height; r++) {
+        const p = { row: r, col: at.col };
+        if (isPlayable(b, p)) out.push(p);
+      }
+      return uniq(out);
+    }
     case 'prism': {
       // Prism clears all tiles of the partner color (or the tile's own color
       // if activated without a partner — falls back to any color present).
@@ -170,8 +193,14 @@ export function comboClears(
       }
       return cells;
     }
-    default:
-      return [a.at, c.at];
+    default: {
+      // Any combo involving the newer specials (cross / nova): fire BOTH
+      // specials' own activations at once — the union of their clears.
+      return uniq([
+        ...cellsClearedByActivation(b, a.at, a.kind, c.color ?? undefined),
+        ...cellsClearedByActivation(b, c.at, c.kind, a.color ?? undefined),
+      ]);
+    }
   }
 }
 

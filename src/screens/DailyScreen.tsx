@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { WoodButton } from '../components/WoodButton';
+import { RewardChips } from '../components/Currency';
 import { useProfile } from '../state/profile';
 import { useRetention } from '../state/retention';
 import { useUI } from '../state/ui';
@@ -66,24 +68,22 @@ export function DailyScreen(): React.ReactElement {
                 ]}
               >
                 <Text style={styles.dayNum}>Day {i + 1}</Text>
-                <Text style={styles.dayReward}>
-                  {[g.coins && `${g.coins}🪙`, g.embers && `${g.embers}🔥`, g.gems && `${g.gems}⭐`]
-                    .filter(Boolean)
-                    .join(' ')}
-                </Text>
+                <RewardChips
+                  grants={{ coins: g.coins, embers: g.embers, gems: g.gems }}
+                  size={12}
+                  textStyle={styles.dayReward}
+                  style={styles.dayRewardRow}
+                />
               </View>
             );
           })}
         </View>
-        <Pressable
-          style={[styles.claimBtn, !canLogin && styles.disabled]}
-          disabled={!canLogin}
+        <WoodButton
+          label={canLogin ? `Claim day ${idx + 1}` : 'Come back tomorrow'}
           onPress={click(doClaim)}
-        >
-          <Text style={styles.claimLabel}>
-            {canLogin ? `Claim day ${idx + 1}` : 'Come back tomorrow'}
-          </Text>
-        </Pressable>
+          disabled={!canLogin}
+          labelStyle={styles.claimLabel}
+        />
         <Text style={styles.hint}>
           Completed cycles: {cal.completedCycles}. Miss a night and the ritual resets.
         </Text>
@@ -139,7 +139,8 @@ const styles = StyleSheet.create({
   dayToday: { borderColor: palette.candlelight, borderWidth: 2 },
   dayClaimed: { opacity: 0.4 },
   dayNum: { color: palette.parchment, fontSize: 12, fontWeight: '700' },
-  dayReward: { color: palette.parchmentDim, fontSize: 11, marginTop: 2 },
+  dayReward: { color: palette.parchmentDim, fontSize: 11 },
+  dayRewardRow: { marginTop: 4, justifyContent: 'center' },
   claimBtn: {
     marginTop: spacing.md,
     backgroundColor: palette.candlelight,

@@ -2,9 +2,9 @@ import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { useProfile } from '../state/profile';
 
 /**
- * Ambient music player. Loads 10 algorithmically-composed pentatonic
- * loops and plays them one at a time, respecting the profile's
- * musicEnabled + musicVolume settings.
+ * Ambient music player. Loads themed ambient loops (10 in-house
+ * pentatonic + 3 Kenney CC0 recorded beds) and plays them one at a time,
+ * respecting the profile's musicEnabled + musicVolume settings.
  *
  * Simple UX: pick a random track on boot; user can skip forward / back
  * from Settings. Each track loops until the user changes it. When the
@@ -29,6 +29,10 @@ export const TRACKS: TrackDef[] = [
   { id: 'lanterns_vigil', title: "Lantern's Vigil", mood: 'Steady glow' },
   { id: 'first_star', title: 'First Star', mood: 'Twinkle' },
   { id: 'winter_brew', title: 'Winter Brew', mood: 'Slow subterranean' },
+  // Kenney Music Loops (CC0) — real recorded ambient beds. See ASSETS_LICENSES.md.
+  { id: 'kenney_flowing_rocks', title: 'Moonlit Stream', mood: 'Ambient bed' },
+  { id: 'kenney_night_beach', title: 'Nightshore', mood: 'Mellow tide' },
+  { id: 'kenney_infinite_descent', title: 'Deepening', mood: 'Calm mystery' },
 ];
 
 // Requires must be static — Metro can't resolve `require(variable)`. So
@@ -44,6 +48,9 @@ const SOURCES: Record<string, number> = {
   'lanterns_vigil': require('../../assets/music/lanterns_vigil.wav'),
   first_star: require('../../assets/music/first_star.wav'),
   winter_brew: require('../../assets/music/winter_brew.wav'),
+  kenney_flowing_rocks: require('../../assets/music/kenney_flowing_rocks.mp3'),
+  kenney_night_beach: require('../../assets/music/kenney_night_beach.mp3'),
+  kenney_infinite_descent: require('../../assets/music/kenney_infinite_descent.mp3'),
 };
 
 let currentPlayer: AudioPlayer | null = null;

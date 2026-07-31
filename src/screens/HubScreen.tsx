@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { Icon } from '../components/Icon';
 import { useProfile, UNLOCK_COMPANIONS_AT, UNLOCK_EXPEDITIONS_AT } from '../state/profile';
 import { useUI, type HubTab } from '../state/ui';
 import { track } from '../telemetry/logger';
@@ -127,10 +128,12 @@ function TabBtn({
         locked && styles.tabBtnLocked,
       ]}
     >
-      <Text style={[styles.tabLabel, active && styles.tabLabelActive, locked && styles.tabLabelLocked]}>
-        {locked ? '🔒 ' : ''}
-        {label}
-      </Text>
+      <View style={styles.tabLabelRow}>
+        {locked && <Icon name="lock" size={12} tint={palette.parchmentDim} />}
+        <Text style={[styles.tabLabel, active && styles.tabLabelActive, locked && styles.tabLabelLocked]}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -577,6 +580,11 @@ const styles = StyleSheet.create({
   },
   tabBtnLocked: {
     opacity: 0.5,
+  },
+  tabLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   tabLabel: {
     color: palette.parchmentDim,

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
 import { useUI } from '../state/ui';
 import { LEVELS } from '../levels/catalog';
+import { APP_VERSION, EXPO_SDK } from '../appMeta';
 
 export function AboutScreen(): React.ReactElement {
   const goToHome = useUI((s) => s.goToHome);
@@ -19,7 +20,7 @@ export function AboutScreen(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Moonpetal Apothecary</Text>
         <Text style={styles.byline}>By Bit Serenity Studios</Text>
-        <Text style={styles.version}>Version 0.4.0 · SDK 54</Text>
+        <Text style={styles.version}>Version {APP_VERSION} · SDK {EXPO_SDK}</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>What is this?</Text>

@@ -1,29 +1,39 @@
-import { useSVG, type SkSVG } from '@shopify/react-native-skia';
+import { useImage, type SkImage } from '@shopify/react-native-skia';
 import type { SpecialKind, TileColor } from '../engine/types';
 
 /**
- * Board art — Fluent Emoji (MIT, see ASSETS_LICENSES.md) loaded as Skia
- * SVG objects. One hook so BoardView stays clean. useSVG loads async;
- * entries are null until decoded, and BoardView falls back to the old
- * text glyphs for those first frames.
+ * Board art. Tiles are Kenney Puzzle Pack gems and specials are CC0 icons
+ * (Kenney / Quaternius packs — see ASSETS_LICENSES.md), all public domain so
+ * the build ships clean for sale. Loaded as Skia images through one hook so
+ * BoardView stays clean. Every entry loads async and is null until decoded;
+ * BoardView falls back to the text glyphs for those first frames.
  */
 export interface TileArt {
-  tiles: Record<TileColor, SkSVG | null>;
-  specials: Record<SpecialKind, SkSVG | null>;
+  tiles: Record<TileColor, SkImage | null>;
+  specials: Record<SpecialKind, SkImage | null>;
 }
 
 export function useTileArt(): TileArt {
-  const moonpetal = useSVG(require('../../assets/art/fluent-emoji-flat/cherry-blossom.svg'));
-  const vial = useSVG(require('../../assets/art/fluent-emoji-flat/test-tube.svg'));
-  const runestone = useSVG(require('../../assets/art/fluent-emoji-flat/rock.svg'));
-  const resin = useSVG(require('../../assets/art/fluent-emoji-flat/honey-pot.svg'));
-  const mushroom = useSVG(require('../../assets/art/fluent-emoji-flat/mushroom.svg'));
-  const bomb = useSVG(require('../../assets/art/fluent-emoji-flat/bomb.svg'));
-  const bolt = useSVG(require('../../assets/art/fluent-emoji-flat/high-voltage.svg'));
-  const rainbow = useSVG(require('../../assets/art/fluent-emoji-flat/rainbow.svg'));
+  const moonpetal = useImage(require('../../assets/art/kenney-gems/moonpetal.png'));
+  const vial = useImage(require('../../assets/art/kenney-gems/vial.png'));
+  const runestone = useImage(require('../../assets/art/kenney-gems/runestone.png'));
+  const resin = useImage(require('../../assets/art/kenney-gems/resin.png'));
+  const mushroom = useImage(require('../../assets/art/kenney-gems/mushroom.png'));
+  const bomb = useImage(require('../../assets/icons/bomb.png'));
+  const bolt = useImage(require('../../assets/icons/bolt.png'));
+  const prism = useImage(require('../../assets/icons/prism.png'));
+  const collision = useImage(require('../../assets/icons/collision.png'));
+  const nova = useImage(require('../../assets/icons/nova.png'));
 
   return {
     tiles: { moonpetal, vial, runestone, resin, mushroom },
-    specials: { bomb, lineH: bolt, lineV: bolt, prism: rainbow },
+    specials: {
+      bomb,
+      lineH: bolt,
+      lineV: bolt,
+      cross: collision,
+      nova,
+      prism,
+    },
   };
 }

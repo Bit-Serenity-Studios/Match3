@@ -2,7 +2,7 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import { useProfile } from '../state/profile';
 
 /**
- * Sound-effect manager. Preloads a small set of short WAVs at boot and
+ * Sound-effect manager. Preloads a small set of short Kenney mp3s at boot and
  * exposes `sfx(name)` for one-shot playback. Every call short-circuits
  * when the profile's `soundEnabled` flag is false.
  *
@@ -21,16 +21,17 @@ export type SoundId =
   | 'splash'
   | 'toast';
 
+// Kenney SFX (CC0), transcoded OGG -> mp3. See ASSETS_LICENSES.md.
 const SOURCES: Record<SoundId, number> = {
-  click: require('../../assets/sounds/click.wav'),
-  swap: require('../../assets/sounds/swap.wav'),
-  match: require('../../assets/sounds/match.wav'),
-  chain: require('../../assets/sounds/chain.wav'),
-  reject: require('../../assets/sounds/reject.wav'),
-  win: require('../../assets/sounds/win.wav'),
-  lose: require('../../assets/sounds/lose.wav'),
-  splash: require('../../assets/sounds/splash.wav'),
-  toast: require('../../assets/sounds/toast.wav'),
+  click: require('../../assets/sounds/click.mp3'),
+  swap: require('../../assets/sounds/swap.mp3'),
+  match: require('../../assets/sounds/match.mp3'),
+  chain: require('../../assets/sounds/chain.mp3'),
+  reject: require('../../assets/sounds/reject.mp3'),
+  win: require('../../assets/sounds/win.mp3'),
+  lose: require('../../assets/sounds/lose.mp3'),
+  splash: require('../../assets/sounds/splash.mp3'),
+  toast: require('../../assets/sounds/toast.mp3'),
 };
 
 const players = new Map<SoundId, AudioPlayer>();

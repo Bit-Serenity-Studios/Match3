@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii, typography } from '../theme';
+import { Icon } from '../components/Icon';
 import { useProfile } from '../state/profile';
 import { useUI } from '../state/ui';
 import { click } from '../audio/click';
@@ -18,7 +19,7 @@ export function TosModal(): React.ReactElement {
     <View style={styles.root}>
       <View style={styles.card}>
         <View style={styles.crest}>
-          <Text style={styles.crestGlyph}>🌙</Text>
+          <Icon name="moon" size={40} />
         </View>
         <Text style={styles.title}>Welcome, apprentice.</Text>
         <Text style={styles.body}>

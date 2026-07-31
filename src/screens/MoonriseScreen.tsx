@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { palette, spacing, typography, radii } from '../theme';
+import { Icon, type IconName } from '../components/Icon';
 import { useProfile, UNLOCK_MOONRISE_AT_MOONSTONES } from '../state/profile';
 import { ShellFrame } from './shell/ShellFrame';
 
@@ -20,7 +21,7 @@ export function MoonriseScreen(): React.ReactElement {
     <ShellFrame>
       <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.hero}>
-          <Text style={styles.heroGlyph}>🌙</Text>
+          <Icon name="moon" size={44} style={styles.heroGlyph} />
           <Text style={styles.heroTitle}>Moonrise Duel</Text>
           <Text style={styles.heroSub}>
             Compete against other brewers under the same moon.
@@ -29,11 +30,13 @@ export function MoonriseScreen(): React.ReactElement {
 
         {!unlocked && (
           <View style={styles.lockCard}>
-            <Text style={styles.lockGlyph}>🔒</Text>
+            <Icon name="lock" size={22} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.lockTitle}>
-                Ranked events unlock at 🏵️ {UNLOCK_MOONRISE_AT_MOONSTONES}
-              </Text>
+              <View style={styles.lockTitleRow}>
+                <Text style={styles.lockTitle}>Ranked events unlock at</Text>
+                <Icon name="moonstone" size={14} />
+                <Text style={styles.lockTitle}>{UNLOCK_MOONRISE_AT_MOONSTONES}</Text>
+              </View>
               <Text style={styles.lockSub}>
                 Earn moonstones from casual duels below. You have{' '}
                 <Text style={{ color: palette.candlelight }}>
@@ -48,20 +51,20 @@ export function MoonriseScreen(): React.ReactElement {
         <Text style={styles.section}>Live modes</Text>
 
         <ModeCard
-          glyph="⚔️"
+          icon="swords"
           title="Casual Duel"
           subtitle="First to three matches wins. No rank risk."
           badge="Beta"
         />
         <ModeCard
-          glyph="🏆"
+          icon="trophy"
           title="Ranked Duel"
           subtitle="Earn or lose moonstones each match."
           badge={unlocked ? 'Live' : 'Locked'}
           disabled={!unlocked}
         />
         <ModeCard
-          glyph="🎃"
+          icon="pumpkin"
           title="Weekly Cauldron"
           subtitle="Seasonal event with unique rules."
           badge={unlocked ? '3d left' : 'Locked'}
@@ -70,7 +73,7 @@ export function MoonriseScreen(): React.ReactElement {
 
         <Text style={styles.section}>Private</Text>
         <ModeCard
-          glyph="🔗"
+          icon="link"
           title="Invite a friend"
           subtitle="Room codes for a private match. No ranked stakes."
           badge="Free"
@@ -81,13 +84,13 @@ export function MoonriseScreen(): React.ReactElement {
 }
 
 function ModeCard({
-  glyph,
+  icon,
   title,
   subtitle,
   badge,
   disabled,
 }: {
-  glyph: string;
+  icon: IconName;
   title: string;
   subtitle: string;
   badge: string;
@@ -96,7 +99,7 @@ function ModeCard({
   return (
     <Pressable style={[styles.card, disabled && styles.cardDisabled]} disabled={disabled}>
       <View style={styles.cardIcon}>
-        <Text style={styles.cardGlyph}>{glyph}</Text>
+        <Icon name={icon} size={24} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.cardTitle}>{title}</Text>
@@ -122,7 +125,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingVertical: spacing.md,
   },
-  heroGlyph: { fontSize: 42, marginBottom: spacing.xs },
+  heroGlyph: { marginBottom: spacing.xs },
+  lockTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   heroTitle: { ...typography.h1, fontSize: 24 },
   heroSub: {
     ...typography.small,

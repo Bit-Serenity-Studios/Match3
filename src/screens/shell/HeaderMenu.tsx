@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { palette, spacing, radii, typography } from '../../theme';
+import { Icon, type IconName } from '../../components/Icon';
 import { useUI } from '../../state/ui';
 import { click } from '../../audio/click';
 
 interface Item {
-  glyph: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
 }
@@ -35,14 +36,14 @@ export function HeaderMenu(): React.ReactElement | null {
   if (!open) return null;
 
   const items: Item[] = [
-    { glyph: '🌙', label: 'Your Profile', onPress: goToProfile },
-    { glyph: '🐾', label: 'Friends', onPress: goToFriends },
-    { glyph: '🏆', label: 'Leaderboards', onPress: goToLeaderboards },
-    { glyph: '📰', label: 'News', onPress: goToNews },
-    { glyph: '💌', label: 'Join Us', onPress: goToJoinUs },
-    { glyph: '🛟', label: 'Support', onPress: goToSupport },
-    { glyph: '🔗', label: 'Connect Account', onPress: goToConnectAccount },
-    { glyph: '⚙️', label: 'Settings', onPress: goToSettings },
+    { icon: 'moon', label: 'Your Profile', onPress: goToProfile },
+    { icon: 'friends', label: 'Friends', onPress: goToFriends },
+    { icon: 'trophy', label: 'Leaderboards', onPress: goToLeaderboards },
+    { icon: 'news', label: 'News', onPress: goToNews },
+    { icon: 'heart', label: 'Join Us', onPress: goToJoinUs },
+    { icon: 'support', label: 'Support', onPress: goToSupport },
+    { icon: 'link', label: 'Connect Account', onPress: goToConnectAccount },
+    { icon: 'gear', label: 'Settings', onPress: goToSettings },
   ];
 
   return (
@@ -55,7 +56,7 @@ export function HeaderMenu(): React.ReactElement | null {
             {i > 0 && <View style={styles.divider} />}
             <Pressable style={styles.row} onPress={click(it.onPress)}>
               <View style={styles.iconWrap}>
-                <Text style={styles.iconGlyph}>{it.glyph}</Text>
+                <Icon name={it.icon} size={20} />
               </View>
               <Text style={styles.label}>{it.label}</Text>
             </Pressable>
@@ -130,7 +131,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconGlyph: { fontSize: 18 },
   label: {
     ...typography.body,
     color: palette.parchment,

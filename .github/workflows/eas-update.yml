@@ -1,12 +1,9 @@
 name: EAS Update (Expo Go)
 
 # Publishes the real app's JS bundle to Expo's cloud so it opens in Expo Go
-# with NO PC involved. GitHub's runners have open internet, so the whole
-# thing — linking the Expo project, configuring updates, and publishing —
-# happens here in CI. The only human step is adding the EXPO_TOKEN secret
-# once (from a phone). See EAS_PREVIEW.md.
-#
-# Until EXPO_TOKEN exists the job self-skips, so pushes never fail.
+# with NO PC. GitHub's runners have open internet, so linking the Expo
+# project, configuring it, and publishing all happen here. The only human
+# step is adding EXPO_TOKEN once (from a phone). See EAS_PREVIEW.md.
 
 on:
   push:
@@ -24,45 +21,48 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Accept the Expo token under any of the names that have been used so
+    # far: EXPO_TOKEN, the repo secret EXPOAUTH, or the org secret
+    # EXPOGO_AUTH_TOKEN. First non-empty wins.
+    env:
+      EXPO_TOKEN: >-
+        ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN
+            || (secrets.EXPOAUTH != '' && secrets.EXPOAUTH
+                || secrets.EXPOGO_AUTH_TOKEN) }}
     steps:
-      - name: Check for EXPO_TOKEN
-        id: guard
-        env:
-          HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
+      - name: Diagnose token presence
         run: |
-          if [ "$HAS_TOKEN" = "true" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "EXPO_TOKEN not set — skipping. Add it (see EAS_PREVIEW.md) to enable."
-            echo "ok=false" >> "$GITHUB_OUTPUT"
+          echo "EXPO_TOKEN present?        ${{ secrets.EXPO_TOKEN != '' }}"
+          echo "EXPOAUTH present?          ${{ secrets.EXPOAUTH != '' }}"
+          echo "EXPOGO_AUTH_TOKEN present? ${{ secrets.EXPOGO_AUTH_TOKEN != '' }}"
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::No Expo token found under EXPO_TOKEN, EXPOAUTH, or EXPOGO_AUTH_TOKEN."
+            exit 1
           fi
+          echo "Token resolved (length ${#EXPO_TOKEN}). Proceeding."
 
       - name: Checkout
-        if: steps.guard.outputs.ok == 'true'
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
-        if: steps.guard.outputs.ok == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: steps.guard.outputs.ok == 'true'
         run: npm ci
 
       - name: Setup EAS
-        if: steps.guard.outputs.ok == 'true'
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: Who am I (sanity check)
+        run: eas whoami
 
       - name: Link the Expo project (first run only)
-        if: steps.guard.outputs.ok == 'true'
         run: |
           set -e
           LINKED=$(node -e "try{const id=require('./app.json').expo?.extra?.eas?.projectId;process.stdout.write(id?'yes':'no')}catch(e){process.stdout.write('no')}")
@@ -74,11 +74,10 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add app.json
             git commit -m "chore: link EAS project for Expo Go updates [skip ci]" || echo "nothing to commit"
-            git push || echo "push skipped"
+            git push || echo "push skipped (branch protection is fine — the link is cached for this run)"
           else
-            echo "Project already linked (projectId present)."
+            echo "Project already linked."
           fi
 
       - name: Publish update to the preview branch
-        if: steps.guard.outputs.ok == 'true'
         run: eas update --branch preview --message "${{ github.event.head_commit.message || 'manual update' }}" --non-interactive

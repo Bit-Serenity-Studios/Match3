@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { palette, spacing, typography, radii } from '../theme';
+import { CurrencyAmount, RewardChips } from '../components/Currency';
 import { useProfile } from '../state/profile';
 import { useMonetization } from '../state/monetization';
 import { useUI } from '../state/ui';
@@ -131,7 +132,11 @@ export function StoreScreen(): React.ReactElement {
       </View>
 
       <View style={styles.wallet}>
-        <Text style={typography.small}>⭐ {gems} · 🪙 {coins} · 🔥 {embers}</Text>
+        <RewardChips
+          grants={{ gems, coins, embers }}
+          size={14}
+          textStyle={typography.small}
+        />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -169,9 +174,17 @@ export function StoreScreen(): React.ReactElement {
               onPress={() => buyProduct(PIGGY_UNLOCK)}
               disabled={piggy.gems <= 0}
             >
-              <Text style={styles.claimLabel}>
-                Crack for {piggy.gems}⭐ · {PIGGY_UNLOCK.displayPrice}
-              </Text>
+              <View style={styles.claimRow}>
+                <Text style={styles.claimLabel}>Crack for</Text>
+                <CurrencyAmount
+                  kind="gems"
+                  amount={piggy.gems}
+                  size={14}
+                  tint={palette.bgDeep}
+                  textStyle={styles.claimLabel}
+                />
+                <Text style={styles.claimLabel}>· {PIGGY_UNLOCK.displayPrice}</Text>
+              </View>
             </Pressable>
           </View>
         </View>
@@ -268,4 +281,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   claimLabel: { color: palette.bgDeep, fontWeight: '700' },
+  claimRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 });

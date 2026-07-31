@@ -1,0 +1,37 @@
+name: CI
+
+# Quality gate: typecheck + the full jest suite on every push and PR.
+# Keeps the 202-test suite honest before anything ships or builds.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/moonpetal-phase-4-economy-ykq7a3
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npx jest --ci

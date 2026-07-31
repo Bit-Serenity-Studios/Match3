@@ -20,6 +20,8 @@ export const ENGINE_CONFIG = {
   specials: {
     // Cells cleared by Bomb Bloom around center (Chebyshev distance <= 1)
     bombRadius: 1,
+    // Cells cleared by Moonburst Nova around center (Chebyshev distance <= 2 => 5x5)
+    novaRadius: 2,
   },
   shuffle: {
     // Max attempts before giving up and accepting a suboptimal reshuffle

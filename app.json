@@ -2,17 +2,34 @@
   "expo": {
     "name": "Moonpetal Apothecary",
     "slug": "moonpetal-apothecary",
-    "version": "0.1.0",
+    "version": "0.5.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": false },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1a0f24"
       }
     },
-    "web": { "bundler": "metro" },
-    "runtimeVersion": { "policy": "sdkVersion" }
+    "web": {
+      "bundler": "metro"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cf89f08d-d801-4c90-b063-e932747cd592"
+      }
+    },
+    "owner": "firewalk",
+    "updates": {
+      "url": "https://u.expo.dev/cf89f08d-d801-4c90-b063-e932747cd592"
+    }
   }
 }
