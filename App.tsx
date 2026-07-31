@@ -23,8 +23,7 @@ import { useRetention } from './src/state/retention';
 import { useProfile } from './src/state/profile';
 import { initSoundEngine, sfx } from './src/audio/soundEffects';
 import { initMusic, refreshMusicFromProfile } from './src/audio/musicPlayer';
-
-const APP_VERSION = '0.5.0';
+import { APP_VERSION } from './src/appMeta';
 
 export default function App(): React.ReactElement {
   const screen = useUI((s) => s.screen);

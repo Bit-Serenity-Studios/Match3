@@ -1,0 +1,77 @@
+name: EAS Build (internal testing)
+
+# Kicks off a native EAS build from GitHub — no PC needed. Pick a profile
+# and platform from the "Run workflow" button in the Actions tab.
+#
+#   preview      -> internal-distribution build (Android APK you can sideload,
+#                   iOS ad-hoc / TestFlight-ready). Best for tester rounds.
+#   development  -> dev-client build for debugging on device.
+#   production   -> store binary (AAB / App Store), auto-incrementing build no.
+#
+# Android works out of the box (EAS generates a keystore). iOS needs your
+# Apple Developer account configured once via `eas credentials` — see
+# INTERNAL_TESTING.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS build profile'
+        type: choice
+        default: preview
+        options:
+          - preview
+          - development
+          - production
+      platform:
+        description: 'Platform'
+        type: choice
+        default: android
+        options:
+          - android
+          - ios
+          - all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Same token fallback chain as the EAS Update workflow: first non-empty wins.
+    env:
+      EXPO_TOKEN: >-
+        ${{ secrets.EXPO_TOKEN != '' && secrets.EXPO_TOKEN
+            || (secrets.EXPOAUTH != '' && secrets.EXPOAUTH
+                || secrets.EXPOGO_AUTH_TOKEN) }}
+    steps:
+      - name: Check token present
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::No Expo token found under EXPO_TOKEN, EXPOAUTH, or EXPOGO_AUTH_TOKEN."
+            exit 1
+          fi
+          echo "Token resolved (length ${#EXPO_TOKEN})."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ env.EXPO_TOKEN }}
+
+      - name: Build
+        run: >-
+          eas build
+          --profile ${{ inputs.profile }}
+          --platform ${{ inputs.platform }}
+          --non-interactive
+          --no-wait

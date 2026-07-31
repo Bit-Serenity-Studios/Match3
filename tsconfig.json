@@ -6,6 +6,7 @@
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
