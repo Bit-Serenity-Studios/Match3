@@ -70,18 +70,29 @@ interface Props {
   size?: number;
   /** Optional tint for the flat white icons; leave undefined for colored art. */
   tint?: string;
+  /**
+   * Accessibility name. Provide it for an icon that stands alone as a control's
+   * only content (e.g. a bare icon button). Omit it when the icon sits next to
+   * a text label or is purely decorative — it is then hidden from screen
+   * readers so they don't announce a string of anonymous "image"s.
+   */
+  label?: string;
   style?: StyleProp<ImageStyle>;
 }
 
 /** Renders a CC0 image glyph. Colored art keeps its palette; pass `tint` only
  *  for the monochrome (white) icons that need to match a surface accent. */
-export function Icon({ name, size = 20, tint, style }: Props): React.ReactElement {
+export function Icon({ name, size = 20, tint, label, style }: Props): React.ReactElement {
+  const a11y = label
+    ? { accessible: true, accessibilityRole: 'image' as const, accessibilityLabel: label }
+    : { accessibilityElementsHidden: true, importantForAccessibility: 'no' as const };
   return (
     <Image
       source={ICONS[name]}
       style={[{ width: size, height: size }, tint ? { tintColor: tint } : null, style]}
       resizeMode="contain"
       accessibilityIgnoresInvertColors
+      {...a11y}
     />
   );
 }

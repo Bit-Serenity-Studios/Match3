@@ -44,9 +44,9 @@ so the `docs/` folder deploys as-is:
 
 Vanilla-JS reimplementation of the match-3: seeded RNG (same deterministic
 approach as the TS engine), match detection, gravity, cascades, fall-in
-animation. Real Fluent Emoji tile art (MIT) inlined as SVG, with the app's
-exact palette and screen flow (home hub, top HUD, bottom nav, store, profile,
-gated online screens) plus a build-status ledger.
+animation. CC0 (public-domain) tile gems and UI icons embedded as base64,
+with the app's exact palette and screen flow (home hub, top HUD, bottom nav,
+store, profile, gated online screens) plus a build-status ledger.
 
 ## What it is not
 

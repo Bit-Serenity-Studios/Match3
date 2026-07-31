@@ -24,7 +24,11 @@ export function TopHud(): React.ReactElement {
 
   return (
     <View style={styles.root}>
-      <Pressable onPress={click(goToProfile)}>
+      <Pressable
+        onPress={click(goToProfile)}
+        accessibilityRole="button"
+        accessibilityLabel="Your profile"
+      >
         <ImageBackground
           source={require('../../../assets/art/kenney-ui/round_brown.png')}
           style={styles.avatar}
@@ -41,7 +45,12 @@ export function TopHud(): React.ReactElement {
       <Chip icon="coin" value={fmt(coins)} />
       <Chip icon="star" value={fmt(gems)} />
 
-      <Pressable style={styles.menuBtn} onPress={click(openHeaderMenu)}>
+      <Pressable
+        style={styles.menuBtn}
+        onPress={click(openHeaderMenu)}
+        accessibilityRole="button"
+        accessibilityLabel="Menu"
+      >
         <View style={styles.menuBars}>
           <View style={styles.menuBar} />
           <View style={styles.menuBar} />
