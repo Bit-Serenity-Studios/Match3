@@ -4,6 +4,9 @@ This repo is now wired for **internal testing builds** (real installable apps,
 not just Expo Go). Everything that can be set up in-repo is done; the only
 remaining steps need your store/developer accounts.
 
+> Once a build is installed, push future changes over-the-air with a single
+> `eas update` — no rebuild. See **`OTA_RELEASE.md`** for that loop.
+
 ## What's already set up
 
 - **Bundle identifiers** — `studio.bitserenity.moonpetal` (prod),
