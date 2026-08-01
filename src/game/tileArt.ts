@@ -20,7 +20,6 @@ export function useTileArt(): TileArt {
   const resin = useImage(require('../../assets/art/kenney-gems/resin.png'));
   const mushroom = useImage(require('../../assets/art/kenney-gems/mushroom.png'));
   const bomb = useImage(require('../../assets/icons/bomb.png'));
-  const bolt = useImage(require('../../assets/icons/bolt.png'));
   const prism = useImage(require('../../assets/icons/prism.png'));
   const collision = useImage(require('../../assets/icons/collision.png'));
   const nova = useImage(require('../../assets/icons/nova.png'));
@@ -29,8 +28,12 @@ export function useTileArt(): TileArt {
     tiles: { moonpetal, vial, runestone, resin, mushroom },
     specials: {
       bomb,
-      lineH: bolt,
-      lineV: bolt,
+      // Line specials are drawn as a directional streak in BoardView
+      // (horizontal for lineH, vertical for lineV) rather than a sprite:
+      // the old bolt.png shrank into an illegible squiggle and made the two
+      // directions indistinguishable.
+      lineH: null,
+      lineV: null,
       cross: collision,
       nova,
       prism,

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Canvas, Image, Rect, RoundedRect, Text, matchFont } from '@shopify/react-native-skia';
-import type { BoardSnapshot, CellPos, Tile } from '../engine/types';
+import type { BoardSnapshot, CellPos, SpecialKind, Tile } from '../engine/types';
 import { TILE_GLYPH, TILE_HEX } from '../config/tiles';
 import { palette } from '../theme';
 import { getTile, idx, isPlayable } from '../engine/board';
@@ -355,24 +355,7 @@ export function BoardView({
                 />
               )}
               {showTileHere && t?.special && (
-                art.specials[t.special] ? (
-                  <Image
-                    image={art.specials[t.special]}
-                    x={x + w - w * 0.42 - 2}
-                    y={y + 2}
-                    width={w * 0.42}
-                    height={w * 0.42}
-                    fit="contain"
-                  />
-                ) : (
-                  <Text
-                    x={x + w - 14}
-                    y={y + 14}
-                    text={specialGlyph(t.special)}
-                    font={specialFont}
-                    color={palette.parchment}
-                  />
-                )
+                <SpecialOverlay special={t.special} x={x} y={y} w={w} art={art} />
               )}
             </React.Fragment>
           );
@@ -443,25 +426,9 @@ export function BoardView({
                     opacity={0.55}
                   />
                 )}
-                {t.special &&
-                  (art.specials[t.special] ? (
-                    <Image
-                      image={art.specials[t.special]}
-                      x={x + w - w * 0.42 - 2}
-                      y={y + 2}
-                      width={w * 0.42}
-                      height={w * 0.42}
-                      fit="contain"
-                    />
-                  ) : (
-                    <Text
-                      x={x + w - 14}
-                      y={y + 14}
-                      text={specialGlyph(t.special)}
-                      font={specialFont}
-                      color={palette.parchment}
-                    />
-                  ))}
+                {t.special && (
+                  <SpecialOverlay special={t.special} x={x} y={y} w={w} art={art} />
+                )}
               </React.Fragment>
             );
           })}
@@ -563,6 +530,92 @@ function MovingTile({
         />
       )}
     </>
+  );
+}
+
+interface SpecialOverlayProps {
+  special: SpecialKind;
+  x: number;
+  y: number;
+  w: number;
+  art: TileArt;
+}
+
+/**
+ * Special-tile indicator.
+ *
+ * Line specials draw as a bright directional streak across the tile —
+ * horizontal for `lineH`, vertical for `lineV` — the match-3 convention, so
+ * the two are instantly distinguishable. (They previously shared the tall
+ * `bolt.png`, which `fit="contain"` shrank into an illegible squiggle in the
+ * corner and left both directions looking identical.)
+ *
+ * Every other special keeps its top-right corner badge: the sprite once it
+ * decodes, or a text glyph until then.
+ */
+function SpecialOverlay({
+  special,
+  x,
+  y,
+  w,
+  art,
+}: SpecialOverlayProps): React.ReactElement {
+  if (special === 'lineH' || special === 'lineV') {
+    const horizontal = special === 'lineH';
+    const cx = x + w / 2;
+    const cy = y + w / 2;
+    const thickness = w * 0.18;
+    const length = w * 0.86;
+    const barW = horizontal ? length : thickness;
+    const barH = horizontal ? thickness : length;
+    const coreThick = thickness * 0.4;
+    const coreW = horizontal ? length : coreThick;
+    const coreH = horizontal ? coreThick : length;
+    return (
+      <>
+        <RoundedRect
+          x={cx - barW / 2}
+          y={cy - barH / 2}
+          width={barW}
+          height={barH}
+          r={thickness / 2}
+          color={palette.parchment}
+          opacity={0.85}
+        />
+        <RoundedRect
+          x={cx - coreW / 2}
+          y={cy - coreH / 2}
+          width={coreW}
+          height={coreH}
+          r={coreThick / 2}
+          color={palette.candlelight}
+          opacity={0.95}
+        />
+      </>
+    );
+  }
+
+  const icon = art.specials[special];
+  if (icon) {
+    return (
+      <Image
+        image={icon}
+        x={x + w - w * 0.42 - 2}
+        y={y + 2}
+        width={w * 0.42}
+        height={w * 0.42}
+        fit="contain"
+      />
+    );
+  }
+  return (
+    <Text
+      x={x + w - 14}
+      y={y + 14}
+      text={specialGlyph(special)}
+      font={specialFont}
+      color={palette.parchment}
+    />
   );
 }
 
