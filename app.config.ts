@@ -52,6 +52,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config.ios,
     supportsTablet: false,
     bundleIdentifier: perVariant.id,
+    infoPlist: {
+      ...(config.ios?.infoPlist ?? {}),
+      // Standard HTTPS only, no non-exempt encryption. Declaring this up
+      // front skips the "Missing Compliance" gate that otherwise blocks
+      // every TestFlight build until you answer it by hand.
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     ...config.android,
